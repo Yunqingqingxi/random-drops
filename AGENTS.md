@@ -42,6 +42,14 @@
 ## 3. 常用命令
 
 ```bash
+# 队友克隆（SSH；推荐先配好 GitHub SSH key）
+git clone git@github.com:Yunqingqingxi/random-drops.git
+cd random-drops
+# 主开发分支叫 26.2（跟随 MC 版本），克隆后即在本地
+git checkout 26.2
+```
+
+```bash
 # 编译检查（开发期每个功能写完就跑，~20 秒）
 ./gradlew compileJava --offline
 
