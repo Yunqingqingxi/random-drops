@@ -1,36 +1,28 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "randomdrops",
 	"version": "${version}",
-	"name": "Example Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Random Drops",
+	"description": "把方块掉落与生物掉落全部替换成随机结果：随机物品（物品池包含全部物品，随机数由时间戳派生）或随机生物（敌对 50% / 中立 30% / 友好 20% 权重）。挖泥土可能掉出钻石，也可能掉出一只僵尸。",
 	"authors": [
-		"Me!"
+		"random-drops"
 	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"license": "MIT",
+	"icon": "assets/randomdrops/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
+			"com.randomdrops.RandomDrops"
 		],
 		"client": [
-			"com.example.client.ExampleModClient"
+			"com.randomdrops.client.RandomDropsClient"
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
-		{
-			"config": "modid.client.mixins.json",
-			"environment": "client"
-		}
+		"randomdrops.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.19.5",
+		"fabricloader": "~0.19.5",
 		"minecraft": "~26.2",
 		"java": ">=25",
 		"fabric-api": "*"

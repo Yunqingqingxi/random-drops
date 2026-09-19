@@ -1,0 +1,14 @@
+{
+  "enchantment.randomdrops.thunderous": "雷霆万钧",
+  "enchantment.randomdrops.stinky_feet": "臭脚",
+  "enchantment.randomdrops.shatter": "碎裂",
+  "enchantment.randomdrops.magnet": "磁石",
+  "enchantment.randomdrops.greed": "贪婪",
+  "enchantment.randomdrops.curse_of_burden": "负重诅咒",
+  "enchantment.randomdrops.curse_of_frailty": "易碎诅咒",
+  "randomdrops.event.frog_rain": "青蛙雨",
+  "randomdrops.event.meteor_shower": "天降陨石",
+  "randomdrops.hud.no_event": "暂无事件",
+  "randomdrops.hud.next": "下次事件",
+  "randomdrops.hud.current": "当前事件"
+}

@@ -15,7 +15,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"modid" {
+		"randomdrops" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
@@ -41,7 +41,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = 24
 }
 
 java {
@@ -50,8 +50,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.VERSION_24
+	targetCompatibility = JavaVersion.VERSION_24
 }
 
 jar {

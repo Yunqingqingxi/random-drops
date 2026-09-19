@@ -38,3 +38,11 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# 本机自检 / 构建日志（每次 runServer 自检都会生成一份，不进库）
+selftest-*.log
+build-*.log
+runserver.log
+
+# WorkBuddy 会话数据（AI 助手本机数据，协作约定统一放 AGENTS.md）
+.workbuddy/
