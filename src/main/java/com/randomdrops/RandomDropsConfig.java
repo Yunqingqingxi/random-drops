@@ -833,7 +833,7 @@ public final class RandomDropsConfig {
 	public int thunderStormIntervalTicks = 20;
 
 	/** 雷击覆盖半径（格，默认 32 = 2 个区块）。 */
-	public double thunderRadius = 32.0D;
+	public double thunderRadius = 24.0D;
 
 	/** 臭脚穿戴后，清理附近花草的半径（格，默认 8）。 */
 	public double stinkyRadius = 8.0D;
@@ -911,13 +911,13 @@ public final class RandomDropsConfig {
 	public double frogRainRadius = 8.0D;
 
 	/** 天降陨石：每隔多少刻在随机玩家附近砸一个陨石（默认 30 = 1.5 秒）。 */
-	public int meteorIntervalTicks = 30;
+	public int meteorIntervalTicks = 50;
 
 	/** 天降陨石：以玩家为中心的水平半径（格，默认 12）。 */
-	public double meteorRadius = 12.0D;
+	public double meteorRadius = 8.0D;
 
 	/** 天降陨石：陨石爆炸半径（格，默认 3）。 */
-	public float meteorExplosionRadius = 3.0F;
+	public float meteorExplosionRadius = 2.0F;
 
 	/** 天降陨石是否在落点点燃火焰（默认 true）。 */
 	public boolean meteorFire = true;
@@ -974,6 +974,143 @@ public final class RandomDropsConfig {
 
 	/** 易碎诅咒：受到攻击时，一件已装备的护甲按此概率直接碎裂消失（默认 0.10）。 */
 	public double curseFrailtyBreakChance = 0.10D;
+
+	// --------------------------------------------- 附魔突破三期（v1.14）
+
+	/**
+	 * <b>击杀随机升级附魔</b>（v1.14）：玩家击杀生物后按概率让一件身上装备的本模组附魔 +1 级。
+	 *
+	 * <p>只升不降（I→II→III），满级（III）的装备不再进入候选。只升级<b>已穿戴/手持</b>的，
+	 * 背包与附魔书不参与。全部自定义附魔（含诅咒）都吃这个机制 —— 升级诅咒是真实的抉择。
+	 */
+	public boolean enableEnchantLevelUp = true;
+
+	/** 每次玩家击杀生物触发升级掷骰的概率（默认 0.05 = 5%）。 */
+	public double killEnchantLevelUpChance = 0.05D;
+
+	/**
+	 * <b>汲取</b>（v1.14 新附魔，锐利武器）：命中时按「每级 1.5 半心」回复生命。
+	 *
+	 * <p>挂在攻击命中（AFTER_DAMAGE）上，目标死了或没造成伤害就不回血。
+	 */
+	public boolean enableLeech = true;
+
+	/** 汲取每级回复的生命（半心为单位，1.5 = 每级 0.75 颗心，默认 1.5）。 */
+	public double leechHealPerLevel = 1.5D;
+
+	/**
+	 * <b>疾风</b>（v1.14 新附魔，靴子）：移速 +5%×等级（与负重诅咒同属性、可并存抵消）。
+	 */
+	public boolean enableSwift = true;
+
+	/**
+	 * <b>威压</b>（v1.14 新附魔，头盔）：定期震慑半径（6 格 × 等级）内的敌对生物，
+	 * 施加缓慢（强度 = 等级）。
+	 */
+	public boolean enableDread = true;
+
+	// --------------------------------------------- v1.14 事件体验与悬赏
+
+	/**
+	 * <b>无掉落方块黑名单</b>：这些方块被移除时<b>不</b>触发随机掉落。
+	 *
+	 * <p>修「灭火也掉随机物品」bug：火被水扑灭走的也是「无破坏者移除」路径，
+	 * 但火原版就没有任何掉落 —— 凭空掉随机物品是 bug 不是惊喜。
+	 */
+	public List<String> noDropBlocks = List.of("minecraft:fire", "minecraft:soul_fire");
+
+	/** 天降陨石：陨石从玩家头顶多高处开始下坠（格，默认 28）。 */
+	public double meteorSpawnHeight = 28.0D;
+
+	/** 天降陨石：下坠加速度（越大砸得越快，默认 0.55 —— 给 2~3 秒的预警时间）。 */
+	public double meteorFallSpeed = 0.55D;
+
+	/** 天降陨石：爆炸后掉落矿物簇的概率与规模 —— 爆炸点残留 2~4 块矿物（默认 true）。 */
+	public boolean meteorOreResidue = true;
+
+	// ---------- v1.14 新事件（雷池 / 血月 / 福到） ----------
+
+	/**
+	 * <b>雷池</b>（v1.14 新事件）：局部雷暴 —— 随机暴露玩家头顶周围持续落雷。
+	 * 躲进屋里 / 山洞（头顶不直通天空）就完全安全。
+	 */
+	public boolean enableThunderPool = true;
+
+	/** 雷池持续秒数（默认 60）。 */
+	public int thunderPoolDurationSeconds = 60;
+
+	/** 雷池落雷间隔（刻，默认 40 = 2 秒一波；每波每玩家 1~2 道雷）。 */
+	public int thunderPoolIntervalTicks = 40;
+
+	/** 雷池散布半径（格，默认 10）。 */
+	public double thunderPoolRadius = 10.0D;
+
+	/**
+	 * <b>血月</b>（v1.14 新事件）：持续在暴露玩家附近涌出敌对生物 —— 危险与掉落并存。
+	 */
+	public boolean enableBloodMoon = true;
+
+	/** 血月持续秒数（默认 120）。 */
+	public int bloodMoonDurationSeconds = 120;
+
+	/** 血月刷怪间隔（刻，默认 300 = 15 秒一波；每波每玩家 2 只）。 */
+	public int bloodMoonIntervalTicks = 300;
+
+	/**
+	 * <b>福到</b>（v1.14 新事件）：纯福利 —— 天上掉随机物品（礼盒式的掉落雨）。
+	 */
+	public boolean enableFortuneRain = true;
+
+	/** 福到持续秒数（默认 60）。 */
+	public int fortuneRainDurationSeconds = 60;
+
+	/** 福到掉落间隔（刻，默认 100 = 5 秒一波）。 */
+	public int fortuneRainIntervalTicks = 100;
+
+	// ---------- 猎杀悬赏（支线任务） ----------
+
+	/**
+	 * <b>猎杀悬赏</b>（v1.14）：定期全服发布「猎杀 N 只某类生物」的支线任务，
+	 * 玩家击杀计入进度，达成时击杀者获得宝藏奖励。用第二条 Boss 条 HUD 显示进度。
+	 */
+	public boolean enableBounties = true;
+
+	/** 悬赏目标数量下限（默认 5）。 */
+	public int bountyMinKills = 5;
+
+	/** 悬赏目标数量上限（默认 12）。 */
+	public int bountyMaxKills = 12;
+
+	/** 悬赏达成时奖励的宝藏件数（默认 3）。 */
+	public int bountyRewardCount = 3;
+
+	/** 悬赏达成后的冷却下限（分钟，默认 5）。 */
+	public int bountyCooldownMinMinutes = 5;
+
+	/** 悬赏达成后的冷却上限（分钟，默认 12）。 */
+	public int bountyCooldownMaxMinutes = 12;
+
+	/** 悬赏 HUD 开关（与事件 HUD 相互独立，可同屏堆叠）。 */
+	public boolean bountyHudEnabled = true;
+
+	// ---------- Bingo（物品 / 击杀集卡） ----------
+
+	/**
+	 * <b>物品 Bingo</b>（v1.14）：随机 25 件主池物品的 5×5 板，玩家把它们捡进背包盖章；
+	 * 横 / 竖 / 斜连线发奖，全清大奖后换新一局。进度绘制在<b>锁定的地图</b>上，手持查看。
+	 */
+	public boolean enableItemBingo = true;
+
+	/**
+	 * <b>击杀 Bingo</b>（v1.14）：随机 25 种生物的 5×5 板，击杀盖章；规则同物品板。
+	 */
+	public boolean enableKillBingo = true;
+
+	/** 每点亮一条 Bingo 线奖励的宝藏件数（默认 2）。 */
+	public int bingoLineRewardCount = 2;
+
+	/** 25 格全清（Bingo）大奖的宝藏件数（默认 8）。 */
+	public int bingoClearRewardCount = 8;
 
 	// -------------------------------------------------- 运行时派生（不写进 json）
 
@@ -1214,6 +1351,37 @@ public final class RandomDropsConfig {
 		curseBurdenSpeedPenalty = Math.min(0.9D, curseBurdenSpeedPenalty);
 		if (!(curseFrailtyBreakChance >= 0.0D)) curseFrailtyBreakChance = 0.0D;
 		if (curseFrailtyBreakChance > 1.0D) curseFrailtyBreakChance = 1.0D;
+
+		// ---- v1.14.0 ----
+		if (!(killEnchantLevelUpChance >= 0.0D)) killEnchantLevelUpChance = 0.0D;
+		if (killEnchantLevelUpChance > 1.0D) killEnchantLevelUpChance = 1.0D;
+		if (!(leechHealPerLevel >= 0.0D)) leechHealPerLevel = 1.5D;
+		leechHealPerLevel = Math.min(10.0D, leechHealPerLevel);
+
+		// 体验收敛（v1.14 反馈：范围/伤害太大，体验太差）：只压新装机的默认值，
+		// 已有配置文件里写死的值保持不动（磁盘值优先），README 有迁移说明。
+		meteorRadius = Math.min(64.0D, Math.max(0.0D, meteorRadius));
+		meteorExplosionRadius = (float) Math.min(16.0D, Math.max(0.0D, meteorExplosionRadius));
+		if (!(meteorSpawnHeight >= 8.0D)) meteorSpawnHeight = 28.0D;
+		meteorSpawnHeight = Math.min(120.0D, meteorSpawnHeight);
+		if (!(meteorFallSpeed >= 0.1D)) meteorFallSpeed = 0.55D;
+		meteorFallSpeed = Math.min(3.0D, meteorFallSpeed);
+		if (bountyMinKills < 1) bountyMinKills = 5;
+		bountyMinKills = Math.min(100, bountyMinKills);
+		if (bountyMaxKills < bountyMinKills) bountyMaxKills = Math.max(bountyMinKills, 12);
+		bountyMaxKills = Math.min(200, bountyMaxKills);
+		if (bountyRewardCount < 0) bountyRewardCount = 3;
+		bountyRewardCount = Math.min(24, bountyRewardCount);
+		if (bountyCooldownMinMinutes < 0) bountyCooldownMinMinutes = 5;
+		if (bountyCooldownMaxMinutes < bountyCooldownMinMinutes) {
+			bountyCooldownMaxMinutes = bountyCooldownMinMinutes;
+		}
+
+		// Bingo 奖励规模
+		if (bingoLineRewardCount < 0) bingoLineRewardCount = 2;
+		bingoLineRewardCount = Math.min(16, bingoLineRewardCount);
+		if (bingoClearRewardCount < 0) bingoClearRewardCount = 8;
+		bingoClearRewardCount = Math.min(48, bingoClearRewardCount);
 	}
 
 	private static Set<Identifier> parseIds(List<String> raw, String field) {

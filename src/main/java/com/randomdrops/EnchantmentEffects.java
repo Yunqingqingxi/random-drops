@@ -66,7 +66,7 @@ public final class EnchantmentEffects {
 
 	/** 注册碎裂 / 贪婪 / 易碎的事件钩子（雷霆 / 臭脚 / 磁石 / 负重的 tick 在 {@link #tick} 里驱动）。 */
 	public static void register() {
-		// 攻击：持碎裂武器打中目标时触发；被打者穿易碎诅咒时按概率碎一件护甲
+		// 攻击：持碎裂武器打中目标时触发；被打者穿易碎诅咒时按概率碎一件护甲；汲取武器吸血
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, damage, newHealth, blocked) -> {
 			RandomDropsConfig config = RandomDropsConfig.get();
 			if (!config.enableEnchantmentBreakthrough) {
@@ -83,11 +83,18 @@ public final class EnchantmentEffects {
 			}
 
 			ServerLevel level = (ServerLevel) attacker.level();
-			Holder<Enchantment> shatter = ModEnchantments.shatter(level);
 
-			if (ModEnchantments.hasEnchantment(attacker.getMainHandItem(), shatter)) {
-				procShatter(level, attacker, entity, true, level.getRandom());
+			// 汲取：命中即吸血（等级 × 回复量）；死了/没受伤就不吸
+			if (config.enableLeech && damage > 0.0F && entity.isAlive()) {
+				int leechLevel = ModEnchantments.getLevel(attacker.getMainHandItem(),
+						ModEnchantments.leech(level));
+				if (leechLevel > 0) {
+					attacker.heal((float) config.leechHealPerLevel * leechLevel);
+				}
 			}
+
+			// 碎裂：等级缩放触发概率（+10%/级）—— 由 procShatter 内部按等级掷骰
+			procShatter(level, attacker, entity, true, level.getRandom(), config);
 		});
 
 		// 挖掘：持碎裂工具破坏方块时触发；持贪婪工具时按概率额外随机掉一件
@@ -98,18 +105,16 @@ public final class EnchantmentEffects {
 			}
 
 			ServerLevel slevel = (ServerLevel) level;
-			Holder<Enchantment> shatter = ModEnchantments.shatter(slevel);
 
-			if (ModEnchantments.hasEnchantment(player.getMainHandItem(), shatter)) {
-				procShatter(slevel, player, null, false, slevel.getRandom());
-			}
+			procShatter(slevel, player, null, false, slevel.getRandom(), config);
 
 			if (!(player instanceof ServerPlayer serverPlayer)) {
 				return; // 客户端侧的伪造调用不处理
 			}
 
-			Holder<Enchantment> greed = ModEnchantments.greed(slevel);
-			if (config.enableGreed && ModEnchantments.hasEnchantment(player.getMainHandItem(), greed)) {
+			if (config.enableGreed
+					&& ModEnchantments.getLevel(player.getMainHandItem(),
+							ModEnchantments.greed(slevel)) > 0) {
 				procGreed(slevel, serverPlayer, pos, slevel.getRandom());
 			}
 		});
@@ -119,14 +124,15 @@ public final class EnchantmentEffects {
 	public static void reset() {
 	}
 
-	/** 每个游戏刻调用：为在线玩家结算雷霆万钧 / 臭脚 / 磁石 / 负重的效果。 */
+	/** 每个游戏刻调用：为在线玩家结算全部穿戴类附魔的效果。 */
 	public static void tick(MinecraftServer server) {
 		RandomDropsConfig config = RandomDropsConfig.get();
 		if (!config.enableEnchantmentBreakthrough) {
-			// 总开关关闭：把可能残留的负重 modifier 摘干净（瞬态不进存档，但在线玩家会带着）
+			// 总开关关闭：把可能残留的负重/疾风 modifier 摘干净（瞬态不进存档，但在线玩家会带着）
 			if (server.getTickCount() % 20 == 0) {
 				for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-					applyBurden(player, false, config);
+					applyBurden(player, 0, config);
+					applySwift(player, 0);
 				}
 			}
 			return;
@@ -137,35 +143,51 @@ public final class EnchantmentEffects {
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			ServerLevel level = player.level();
 
+			// 雷霆万钧：等级越高召雷越频繁（间隔 ÷ 等级）
 			Holder<Enchantment> thunder = ModEnchantments.thunderous(level);
-			if (ModEnchantments.hasEnchantment(player.getItemBySlot(EquipmentSlot.HEAD), thunder)) {
-				int interval = level.isThundering()
+			int thunderLevel = ModEnchantments.getLevel(player.getItemBySlot(EquipmentSlot.HEAD), thunder);
+			if (thunderLevel > 0) {
+				int base = level.isThundering()
 						? Math.max(1, config.thunderStormIntervalTicks)
 						: Math.max(1, config.thunderIntervalTicks);
+				int interval = Math.max(10, base / thunderLevel);
 				if (tick % interval == 0) {
 					strikeAround(level, player, config);
 				}
 			}
 
+			// 臭脚：等级越高作用范围与反胃时长越大
 			Holder<Enchantment> stinky = ModEnchantments.stinkyFeet(level);
-			if (ModEnchantments.hasEnchantment(player.getItemBySlot(EquipmentSlot.FEET), stinky)) {
-				if (config.stinkyTickInterval >= 1 && tick % config.stinkyTickInterval == 0) {
-					stinkyFeetTick(level, player, config);
+			int stinkyLevel = ModEnchantments.getLevel(player.getItemBySlot(EquipmentSlot.FEET), stinky);
+			if (stinkyLevel > 0 && config.stinkyTickInterval >= 1
+					&& tick % config.stinkyTickInterval == 0) {
+				stinkyFeetTick(level, player, stinkyLevel, config);
+			}
+
+			// 磁石：等级越高吸附范围越大（半径 × 等级）
+			if (config.enableMagnet) {
+				int magnetLevel = maxArmorLevel(player, ModEnchantments.magnet(level));
+				if (magnetLevel > 0 && tick % Math.max(1, config.magnetIntervalTicks) == 0) {
+					magnetPull(level, player, magnetLevel, config);
 				}
 			}
 
-			// 磁石：任意护甲部位带磁石即生效
-			if (config.enableMagnet
-					&& anyArmorHas(player, ModEnchantments.magnet(level))
-					&& tick % Math.max(1, config.magnetIntervalTicks) == 0) {
-				magnetPull(level, player, config);
+			// 负重诅咒（惩罚 × 等级）与疾风（加速 × 等级）：每 20 刻幂等结算
+			if (tick % 20 == 0) {
+				applyBurden(player, config.enableCursedEnchantments
+						? maxArmorLevel(player, ModEnchantments.curseOfBurden(level)) : 0, config);
+				applySwift(player, config.enableSwift
+						? ModEnchantments.getLevel(player.getItemBySlot(EquipmentSlot.FEET),
+								ModEnchantments.swift(level)) : 0);
 			}
 
-			// 负重诅咒：每 20 刻幂等结算（穿上挂减速、脱下摘除），modifier 是瞬态的不进存档
-			if (tick % 20 == 0) {
-				boolean hasBurden = config.enableCursedEnchantments
-						&& anyArmorHas(player, ModEnchantments.curseOfBurden(level));
-				applyBurden(player, hasBurden, config);
+			// 威压：头盔带威压时定期震慑半径内敌对生物
+			if (config.enableDread && tick % 40 == 0) {
+				int dreadLevel = ModEnchantments.getLevel(player.getItemBySlot(EquipmentSlot.HEAD),
+						ModEnchantments.dread(level));
+				if (dreadLevel > 0) {
+					dreadTick(level, player, dreadLevel, config);
+				}
 			}
 		}
 	}
@@ -194,9 +216,11 @@ public final class EnchantmentEffects {
 				wearer.getX() + r, wearer.getY() + r, wearer.getZ() + r);
 
 		List<Entity> nearby = level.getEntities(wearer, box,
-				e -> e instanceof LivingEntity && !(e instanceof Player));
+				e -> e instanceof LivingEntity && !(e instanceof Player)
+						// 体验修正：躲在山洞 / 屋顶下的目标不挨雷 —— 雷穿不透山体
+						&& level.canSeeSkyFromBelowWater(e.blockPosition()));
 
-		int cap = 4;
+		int cap = 3;
 		int n = 0;
 		for (Entity e : nearby) {
 			if (n++ >= cap) {
@@ -215,8 +239,10 @@ public final class EnchantmentEffects {
 				|| st.getBlock() == Blocks.FERN;
 	}
 
-	private static void stinkyFeetTick(ServerLevel level, ServerPlayer wearer, RandomDropsConfig config) {
-		double r = config.stinkyRadius;
+	private static void stinkyFeetTick(ServerLevel level, ServerPlayer wearer, int enchLevel,
+			RandomDropsConfig config) {
+		// 等级缩放：范围 1→1.0、2→1.5、3→2.0 倍；反胃时长 × 等级
+		double r = config.stinkyRadius * (1.0D + 0.5D * (enchLevel - 1));
 		witherPlants(level, wearer.blockPosition(), r);
 
 		AABB box = new AABB(
@@ -226,7 +252,7 @@ public final class EnchantmentEffects {
 		// 附近玩家获得反胃（离开范围后不再续期，自然消失）
 		for (Entity e : level.getEntities(wearer, box, e -> e instanceof ServerPlayer && e != wearer)) {
 			((ServerPlayer) e).addEffect(new MobEffectInstance(MobEffects.NAUSEA,
-					config.stinkyNauseaSeconds * 20, 0));
+					config.stinkyNauseaSeconds * enchLevel * 20, 0));
 		}
 
 		// 亡灵被吸引（对非中立亡灵无效 —— 它们本就不是玩家，不受反胃影响，只被吸引）
@@ -293,20 +319,19 @@ public final class EnchantmentEffects {
 
 	// ------------------------------------------------------------ 磁石
 
-	/** 四件护甲任意一件带有指定附魔。 */
-	private static boolean anyArmorHas(LivingEntity entity, Holder<Enchantment> holder) {
+	/** 四件护甲中最高的某附魔等级（0 = 都没有）。 */
+	private static int maxArmorLevel(LivingEntity entity, Holder<Enchantment> holder) {
 		if (holder == null) {
-			return false;
+			return 0;
 		}
 
+		int max = 0;
 		for (EquipmentSlot slot : new EquipmentSlot[] {
 				EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
 		}) {
-			if (ModEnchantments.hasEnchantment(entity.getItemBySlot(slot), holder)) {
-				return true;
-			}
+			max = Math.max(max, ModEnchantments.getLevel(entity.getItemBySlot(slot), holder));
 		}
-		return false;
+		return max;
 	}
 
 	/**
@@ -316,9 +341,11 @@ public final class EnchantmentEffects {
 	 * 拾取延迟）不吸 —— 否则刚扔出去的垃圾会立刻飞回手上；② 已经贴脸（&lt;0.5 格）的
 	 * 不推 —— 让它自然进入拾取距离，避免速度来回抖。
 	 */
-	private static void magnetPull(ServerLevel level, ServerPlayer player, RandomDropsConfig config) {
+	private static void magnetPull(ServerLevel level, ServerPlayer player, int enchLevel,
+			RandomDropsConfig config) {
+		// 等级缩放：半径 × 等级
 		magnetPullAt(level, player, new Vec3(player.getX(), player.getY() + 0.5D, player.getZ()),
-				config.magnetRadius, config.magnetPullStrength);
+				config.magnetRadius * enchLevel, config.magnetPullStrength);
 	}
 
 	/** 磁石核心：把以 center 为中心、radius 半径内的掉落物吸向 center（自检可独立调用）。 */
@@ -353,19 +380,60 @@ public final class EnchantmentEffects {
 	static final Identifier BURDEN_ID =
 			Identifier.fromNamespaceAndPath(RandomDrops.MOD_ID, "curse_of_burden");
 
-	/** 穿着负重诅咒：移速乘 -penalty；脱下：摘掉 modifier。幂等，可每秒重复结算。 */
-	static void applyBurden(LivingEntity entity, boolean hasBurden, RandomDropsConfig config) {
+	/** 穿着负重诅咒：移速乘 -penalty×等级；等级 0 = 脱下，摘掉 modifier。幂等，可每秒重复结算。 */
+	static void applyBurden(LivingEntity entity, int enchLevel, RandomDropsConfig config) {
 		AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
 		if (speed == null) {
 			return;
 		}
 
-		if (hasBurden) {
+		if (enchLevel > 0) {
 			speed.addOrUpdateTransientModifier(new AttributeModifier(BURDEN_ID,
-					-config.curseBurdenSpeedPenalty, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+					-config.curseBurdenSpeedPenalty * enchLevel,
+					AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
 		} else {
 			speed.removeModifier(BURDEN_ID);
 		}
+	}
+
+	/** 疾风的移速加速 modifier key（瞬态）。 */
+	static final Identifier SWIFT_ID =
+			Identifier.fromNamespaceAndPath(RandomDrops.MOD_ID, "swift_boots");
+
+	/** 穿着疾风：移速 +5%×等级；等级 0 = 摘除。与负重同一个属性、不同 key，可并存。 */
+	static void applySwift(LivingEntity entity, int enchLevel) {
+		AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
+		if (speed == null) {
+			return;
+		}
+
+		if (enchLevel > 0) {
+			speed.addOrUpdateTransientModifier(new AttributeModifier(SWIFT_ID,
+					0.05D * enchLevel, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+		} else {
+			speed.removeModifier(SWIFT_ID);
+		}
+	}
+
+	/**
+	 * 威压：定期震慑半径（6 格 × 等级）内的敌对生物 —— 缓慢 debuff，等级越高越强。
+	 * 返回震慑命中数（自检断言用）。
+	 */
+	static int dreadTick(ServerLevel level, LivingEntity wearer, int enchLevel,
+			RandomDropsConfig config) {
+		double r = 6.0D * enchLevel;
+		AABB box = new AABB(
+				wearer.getX() - r, wearer.getY() - r, wearer.getZ() - r,
+				wearer.getX() + r, wearer.getY() + r, wearer.getZ() + r);
+
+		int hits = 0;
+		for (Entity e : level.getEntities(wearer, box,
+				x -> x instanceof Mob && DropRandomizer.isHostile(x.getType(), config))) {
+			((Mob) e).addEffect(new MobEffectInstance(
+					MobEffects.SLOWNESS, 60, enchLevel - 1));
+			hits++;
+		}
+		return hits;
 	}
 
 	/**
@@ -379,12 +447,13 @@ public final class EnchantmentEffects {
 			return;
 		}
 
-		Holder<Enchantment> frailty = ModEnchantments.curseOfFrailty(level);
-		if (!anyArmorHas(victim, frailty)) {
+		// 等级缩放：易碎等级越高，碎裂概率越高（概率 × 等级）
+		int frailtyLevel = maxArmorLevel(victim, ModEnchantments.curseOfFrailty(level));
+		if (frailtyLevel <= 0) {
 			return;
 		}
 
-		if (level.getRandom().nextDouble() >= config.curseFrailtyBreakChance) {
+		if (level.getRandom().nextDouble() >= config.curseFrailtyBreakChance * frailtyLevel) {
 			return;
 		}
 
@@ -416,8 +485,13 @@ public final class EnchantmentEffects {
 	 */
 	private static void procGreed(ServerLevel level, ServerPlayer player, BlockPos pos, RandomSource random) {
 		RandomDropsConfig config = RandomDropsConfig.get();
-		if (config.greedExtraChance <= 0.0D
-				|| random.nextDouble() >= config.greedExtraChance) {
+		if (config.greedExtraChance <= 0.0D) {
+			return;
+		}
+
+		// 等级缩放：额外掉落概率 × 等级
+		int greedLevel = ModEnchantments.getLevel(player.getMainHandItem(), ModEnchantments.greed(level));
+		if (greedLevel <= 0 || random.nextDouble() >= config.greedExtraChance * greedLevel) {
 			return;
 		}
 
@@ -432,9 +506,15 @@ public final class EnchantmentEffects {
 	// ------------------------------------------------------------ 碎裂
 
 	private static void procShatter(ServerLevel level, LivingEntity user, LivingEntity target,
-			boolean isAttack, RandomSource random) {
-		RandomDropsConfig config = RandomDropsConfig.get();
-		if (random.nextDouble() >= config.shatterProcChance) {
+			boolean isAttack, RandomSource random, RandomDropsConfig config) {
+		// 等级缩放：碎裂触发概率 = 基础 + 10%×(等级-1)；没附魔直接短路
+		int shatterLevel = ModEnchantments.getLevel(user.getMainHandItem(), ModEnchantments.shatter(level));
+		if (shatterLevel <= 0) {
+			return;
+		}
+
+		double procChance = config.shatterProcChance + 0.10D * (shatterLevel - 1);
+		if (random.nextDouble() >= procChance) {
 			return;
 		}
 

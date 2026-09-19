@@ -49,6 +49,9 @@ public class RandomDrops implements ModInitializer {
 			DropMerger.reset();
 			// v1.12：清掉附魔效果计时与全局事件 HUD
 			EnchantmentEffects.reset();
+			EnchantmentLevelUps.reset();
+			Bounties.reset();
+			Bingos.reset();
 			GlobalEvents.reset();
 		});
 
@@ -79,6 +82,9 @@ public class RandomDrops implements ModInitializer {
 
 		// v1.12：附魔突破（雷霆万钧 / 臭脚 / 碎裂）与全局事件系统
 		EnchantmentEffects.register();
+		EnchantmentLevelUps.register();
+		Bounties.register();
+		Bingos.register();
 		GlobalEvents.register();
 
 		SelfTest.register();

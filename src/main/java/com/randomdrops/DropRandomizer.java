@@ -110,6 +110,22 @@ public final class DropRandomizer {
 	 * @param breaker 破坏方块的实体，玩家挖掘时是玩家；爆炸 / 活塞等路径为 {@code null}
 	 * @return 要掉落的物品；返回空列表表示「这次什么都不掉」（生物已经另行生成）
 	 */
+	/**
+	 * 「无掉落方块」黑名单：这些方块被移除时<b>不</b>触发随机掉落。
+	 *
+	 * <p>修「灭火也掉随机物品」bug —— 火被水扑灭走的同样是「无破坏者的方块移除」路径，
+	 * 但火原版就没有任何掉落物，凭空掉随机物品是 bug 不是惊喜。
+	 * 判定走配置的 {@code noDropBlocks}（默认 fire / soul_fire，可自行追加）。
+	 */
+	public static boolean isDroplessBlock(net.minecraft.world.level.block.state.BlockState state) {
+		if (state == null) {
+			return false;
+		}
+
+		Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+		return id != null && RandomDropsConfig.get().noDropBlocks.contains(id.toString());
+	}
+
 	public static List<ItemStack> rollBlockDrop(ServerLevel level, BlockPos pos, Entity breaker) {
 		RandomDropsConfig config = RandomDropsConfig.get();
 		boolean allowMob = config.mobChance > 0.0D
@@ -691,6 +707,27 @@ public final class DropRandomizer {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Bingo 物品板用：从主随机池随机抽 {@code count} 个<b>不重复</b>的物品 id 字符串。
+	 *
+	 * <p>走完整主池（含模组物品），所以 bingo 的目标就是「玩家挖一挖真的能碰到的东西」。
+	 * 池子小于请求数时有多少给多少。
+	 */
+	public static List<String> samplePoolForBingo(ServerLevel level, int count, RandomSource random) {
+		List<Item> pool = new ArrayList<>(itemPool());
+
+		List<String> picked = new ArrayList<>();
+		int attempts = Math.min(count * 30, pool.size() * 3);
+		while (picked.size() < count && attempts-- > 0 && !pool.isEmpty()) {
+			Item item = pool.remove(random.nextInt(pool.size()));
+			Identifier id = BuiltInRegistries.ITEM.getKey(item);
+			if (id != null) {
+				picked.add(id.toString());
+			}
+		}
+		return picked;
 	}
 
 	/**

@@ -35,6 +35,12 @@ public final class ModEnchantments {
 	public static final String GREED = "greed";
 	public static final String CURSE_OF_BURDEN = "curse_of_burden";
 	public static final String CURSE_OF_FRAILTY = "curse_of_frailty";
+	public static final String LEECH = "leech";
+	public static final String SWIFT = "swift";
+	public static final String DREAD = "dread";
+
+	/** 自定义附魔的统一等级上限（与 datapack json 的 max_level 保持一致）。 */
+	public static final int MAX_LEVEL = 3;
 
 	/** 碎裂可附着的武器 / 工具 id（与 {@code data/randomdrops/enchantment/shatter.json} 的 supported_items 一一对应）。 */
 	private static final Set<String> WEAPON_TOOL_IDS = Set.of(
@@ -58,6 +64,9 @@ public final class ModEnchantments {
 	private static volatile Holder<Enchantment> greedHolder;
 	private static volatile Holder<Enchantment> burdenHolder;
 	private static volatile Holder<Enchantment> frailtyHolder;
+	private static volatile Holder<Enchantment> leechHolder;
+	private static volatile Holder<Enchantment> swiftHolder;
+	private static volatile Holder<Enchantment> dreadHolder;
 
 	/** 从注册表解析全部自定义附魔（幂等，带缓存）。 */
 	public static void resolve(ServerLevel level) {
@@ -67,7 +76,8 @@ public final class ModEnchantments {
 	public static synchronized void resolve(RegistryAccess access) {
 		if (thunderousHolder != null && stinkyHolder != null && shatterHolder != null
 				&& magnetHolder != null && greedHolder != null
-				&& burdenHolder != null && frailtyHolder != null) {
+				&& burdenHolder != null && frailtyHolder != null
+				&& leechHolder != null && swiftHolder != null && dreadHolder != null) {
 			return;
 		}
 
@@ -80,6 +90,9 @@ public final class ModEnchantments {
 		greedHolder = resolveOne(lookup, GREED);
 		burdenHolder = resolveOne(lookup, CURSE_OF_BURDEN);
 		frailtyHolder = resolveOne(lookup, CURSE_OF_FRAILTY);
+		leechHolder = resolveOne(lookup, LEECH);
+		swiftHolder = resolveOne(lookup, SWIFT);
+		dreadHolder = resolveOne(lookup, DREAD);
 	}
 
 	private static Holder<Enchantment> resolveOne(
@@ -123,6 +136,21 @@ public final class ModEnchantments {
 		return frailtyHolder;
 	}
 
+	public static Holder<Enchantment> leech(ServerLevel level) {
+		resolve(level);
+		return leechHolder;
+	}
+
+	public static Holder<Enchantment> swift(ServerLevel level) {
+		resolve(level);
+		return swiftHolder;
+	}
+
+	public static Holder<Enchantment> dread(ServerLevel level) {
+		resolve(level);
+		return dreadHolder;
+	}
+
 	/** 自检用：按名字取附魔 Holder（不存在返回 null）。 */
 	public static Holder<Enchantment> byName(ServerLevel level, String name) {
 		resolve(level);
@@ -134,8 +162,21 @@ public final class ModEnchantments {
 			case GREED -> greedHolder;
 			case CURSE_OF_BURDEN -> burdenHolder;
 			case CURSE_OF_FRAILTY -> frailtyHolder;
+			case LEECH -> leechHolder;
+			case SWIFT -> swiftHolder;
+			case DREAD -> dreadHolder;
 			default -> null;
 		};
+	}
+
+	/** 物品堆上某附魔的等级（未附魔返回 0）。 */
+	public static int getLevel(ItemStack stack, Holder<Enchantment> holder) {
+		if (holder == null || stack == null || stack.isEmpty()) {
+			return 0;
+		}
+
+		ItemEnchantments ench = stack.get(DataComponents.ENCHANTMENTS);
+		return ench == null ? 0 : ench.getLevel(holder);
 	}
 
 	/** 物品堆上是否带有某个本模组附魔。 */

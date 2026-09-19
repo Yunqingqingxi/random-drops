@@ -9,7 +9,7 @@
     "minecraft:trident", "minecraft:mace", "minecraft:bow", "minecraft:crossbow", "minecraft:fishing_rod", "minecraft:shears"
   ],
   "weight": 2,
-  "max_level": 1,
+  "max_level": 3,
   "min_cost": { "base": 8, "per_level_above_first": 0 },
   "max_cost": { "base": 25, "per_level_above_first": 0 },
   "anvil_cost": 3,

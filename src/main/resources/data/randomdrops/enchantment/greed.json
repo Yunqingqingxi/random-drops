@@ -2,7 +2,7 @@
   "description": { "translate": "enchantment.randomdrops.greed" },
   "supported_items": "#minecraft:enchantable/mining",
   "weight": 6,
-  "max_level": 1,
+  "max_level": 3,
   "min_cost": { "base": 15, "per_level_above_first": 0 },
   "max_cost": { "base": 35, "per_level_above_first": 0 },
   "anvil_cost": 5,

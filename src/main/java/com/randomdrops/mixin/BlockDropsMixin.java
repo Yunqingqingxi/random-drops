@@ -45,7 +45,8 @@ public class BlockDropsMixin {
 			cancellable = true)
 	private static void randomdrops$replaceDrops(BlockState state, ServerLevel level, BlockPos pos,
 			BlockEntity blockEntity, CallbackInfoReturnable<List<ItemStack>> cir) {
-		if (!RandomDropsConfig.get().enableBlockDrops) {
+		if (!RandomDropsConfig.get().enableBlockDrops
+				|| DropRandomizer.isDroplessBlock(state)) {
 			return;
 		}
 
@@ -64,7 +65,8 @@ public class BlockDropsMixin {
 			cancellable = true)
 	private static void randomdrops$replaceDropsWithBreaker(BlockState state, ServerLevel level, BlockPos pos,
 			BlockEntity blockEntity, Entity breaker, ItemInstance tool, CallbackInfoReturnable<List<ItemStack>> cir) {
-		if (!RandomDropsConfig.get().enableBlockDrops) {
+		if (!RandomDropsConfig.get().enableBlockDrops
+				|| DropRandomizer.isDroplessBlock(state)) {
 			return;
 		}
 
