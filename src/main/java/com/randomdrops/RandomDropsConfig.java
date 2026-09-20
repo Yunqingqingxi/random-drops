@@ -985,8 +985,8 @@ public final class RandomDropsConfig {
 	 */
 	public boolean enableEnchantLevelUp = true;
 
-	/** 每次玩家击杀生物触发升级掷骰的概率（默认 0.05 = 5%）。 */
-	public double killEnchantLevelUpChance = 0.05D;
+	/** 每次玩家击杀生物触发升级掷骰的概率（v1.14.1 起默认 15%，覆盖全部附魔）。 */
+	public double killEnchantLevelUpChance = 0.15D;
 
 	/**
 	 * <b>汲取</b>（v1.14 新附魔，锐利武器）：命中时按「每级 1.5 半心」回复生命。
@@ -1066,6 +1066,33 @@ public final class RandomDropsConfig {
 
 	/** 福到掉落间隔（刻，默认 100 = 5 秒一波）。 */
 	public int fortuneRainIntervalTicks = 100;
+
+	// ---------- v1.14.1 幸运机制 ----------
+
+	/**
+	 * <b>幸运加成</b>（v1.14.1）：手持工具 / 武器的<b>附魔总等级</b>越高，
+	 * 随机掉落的暴击（宝藏池）概率越高 —— 挖矿与击杀都生效（都看主手）。
+	 *
+	 * <p>锋利 V 效率 V 的钻石镐 = 10 级 → 默认 +10% 暴击。鼓励玩家先武装再开采。
+	 */
+	public boolean enableLuckBonus = true;
+
+	/** 幸运加成：每级附魔提升的暴击概率（默认 0.01 = 每级 +1%）。 */
+	public double luckBonusPerLevel = 0.01D;
+
+	/** 幸运加成上限（默认 0.25 = 最多 +25%，防止附魔流碾压随机性）。 */
+	public double luckBonusCap = 0.25D;
+
+	// ---------- v1.14.1 图书管理员交易重做 ----------
+
+	/**
+	 * <b>图书管理员交易随机刷新</b>（v1.14.1）：每次右键打开交易都重掷，
+	 * 卖「顶级附魔书」（全部种类、等级=各自 max_level），代价是随机物品 ×最多 3 个。
+	 */
+	public boolean enableLibrarianRefresh = true;
+
+	/** 图书管理员每笔交易的代价物品数量上限（默认 3）。 */
+	public int librarianMaxCost = 3;
 
 	// ---------- 猎杀悬赏（支线任务） ----------
 
@@ -1382,6 +1409,16 @@ public final class RandomDropsConfig {
 		bingoLineRewardCount = Math.min(16, bingoLineRewardCount);
 		if (bingoClearRewardCount < 0) bingoClearRewardCount = 8;
 		bingoClearRewardCount = Math.min(48, bingoClearRewardCount);
+
+		// 图书管理员交易
+		if (librarianMaxCost < 1) librarianMaxCost = 3;
+		librarianMaxCost = Math.min(16, librarianMaxCost);
+
+		// 幸运加成
+		if (!(luckBonusPerLevel >= 0.0D)) luckBonusPerLevel = 0.01D;
+		luckBonusPerLevel = Math.min(0.1D, luckBonusPerLevel);
+		if (!(luckBonusCap >= 0.0D)) luckBonusCap = 0.25D;
+		luckBonusCap = Math.min(1.0D, luckBonusCap);
 	}
 
 	private static Set<Identifier> parseIds(List<String> raw, String field) {

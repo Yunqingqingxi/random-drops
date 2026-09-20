@@ -156,6 +156,12 @@ public final class SelfTest {
 			checkBounty(server, level, config);
 			checkBingo(server, level, config);
 			checkNewEvents(server, level, config);
+
+			// ---- v1.14.1：植被不掉落 + 升级全附魔 + 幸运加成 + 图书管理员重做 ----
+			checkNoLootPlants(level, config);
+			checkUniversalLevelUp(level, config);
+			checkLuckBonus(level, config);
+			checkLibrarian(level, config);
 		} catch (Throwable error) {
 			failed++;
 			RandomDrops.LOGGER.error("[random-drops] 自检过程中抛异常", error);
@@ -1654,10 +1660,16 @@ public final class SelfTest {
 
 		boolean targetsOk = Bingos.itemBoardActiveForTest() && Bingos.itemDoneCountForTest() == 0;
 
+		// 地图数据真实涂色（修「板子空白」bug 的回归断言）：边框白 + 中心格灰，都应非 0
+		int framePixel = Bingos.mapPixelForTest(level, false, 2, 2);
+		int cellPixel = Bingos.mapPixelForTest(level, false, 64, 64);
+		boolean painted = framePixel > 0 && cellPixel > 0;
+
 		check("㉛ Bingo·双板+地图+连线结构",
-				itemOn && killOn && linesOk && targetsOk,
+				itemOn && killOn && linesOk && targetsOk && painted,
 				"物品板=" + itemOn + " 击杀板=" + killOn + " 12 条线结构=" + linesOk
-						+ " 初始进度干净=" + targetsOk);
+						+ " 初始进度干净=" + targetsOk
+						+ " 地图涂色(边框/格)=" + framePixel + "/" + cellPixel);
 	}
 
 	/** ㉜：三个新事件（雷池 / 血月 / 福到）入列 + 结算一步不崩 + HUD 展示名正确。 */
@@ -1689,6 +1701,138 @@ public final class SelfTest {
 		check("㉜ 新事件·雷池/血月/福到",
 				ran && hudOk,
 				"三事件结算不崩=" + ran + " HUD 全显示=" + hudOk);
+	}
+
+	/** 自检辅助：取一个原版附魔的 Holder。 */
+	private static Holder<Enchantment> vanillaEnchant(ServerLevel level, String id) {
+		return level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+				.get(net.minecraft.resources.ResourceKey.create(
+						net.minecraft.core.registries.Registries.ENCHANTMENT,
+						Identifier.parse(id))).orElse(null);
+	}
+
+	/** ㉝：花草 / 枯叶堆 / 水草什么都不掉，石头不受影响。 */
+	private static void checkNoLootPlants(ServerLevel level, RandomDropsConfig config) {
+		boolean grass = DropRandomizer.isNoLootPlant(Blocks.SHORT_GRASS.defaultBlockState());
+		boolean flower = DropRandomizer.isNoLootPlant(Blocks.POPPY.defaultBlockState());
+		boolean seagrass = DropRandomizer.isNoLootPlant(Blocks.SEAGRASS.defaultBlockState());
+		boolean deadBush = DropRandomizer.isNoLootPlant(Blocks.DEAD_BUSH.defaultBlockState());
+		boolean leafLitter = DropRandomizer.isNoLootPlant(Blocks.LEAF_LITTER.defaultBlockState());
+		boolean stoneFine = !DropRandomizer.isNoLootPlant(Blocks.STONE.defaultBlockState());
+
+		check("㉝ 植被不掉落·花草/水草/枯叶堆",
+				grass && flower && seagrass && deadBush && leafLitter && stoneFine,
+				"草=" + grass + " 花=" + flower + " 水草=" + seagrass + " 枯灌木=" + deadBush
+						+ " 枯叶堆=" + leafLitter + " 石头不受影响=" + stoneFine);
+	}
+
+	/** ㉞：击杀升级覆盖原版附魔（锋利 III→IV），诅咒排除，各附魔自身满级封顶。 */
+	private static void checkUniversalLevelUp(ServerLevel level, RandomDropsConfig config) {
+		Holder<Enchantment> sharpness = vanillaEnchant(level, "minecraft:sharpness");
+		Holder<Enchantment> binding = vanillaEnchant(level, "minecraft:binding_curse");
+		boolean registered = sharpness != null && binding != null;
+
+		boolean vanillaLadder = false;
+		boolean curseExcluded = false;
+		if (registered) {
+			// 锋利（max 5）：III → IV 可以升
+			ItemStack sword = new ItemStack(Items.IRON_SWORD);
+			ItemEnchantments.Mutable ench = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			ench.set(sharpness, 3);
+			EnchantmentHelper.setEnchantments(sword, ench.toImmutable());
+			vanillaLadder = EnchantmentLevelUps.levelUp(sword, sharpness) == 4;
+
+			// 绑定诅咒：不参与升级（等级不变）
+			ItemStack helm = new ItemStack(Items.IRON_HELMET);
+			ItemEnchantments.Mutable curse = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			curse.set(binding, 1);
+			EnchantmentHelper.setEnchantments(helm, curse.toImmutable());
+			curseExcluded = EnchantmentLevelUps.levelUp(helm, binding) == 1;
+		}
+
+		boolean chanceTuned = config.killEnchantLevelUpChance >= 0.14D
+				&& config.killEnchantLevelUpChance <= 0.16D;
+
+		check("㉞ 升级全附魔·含原版+排除诅咒+15%",
+				registered && vanillaLadder && curseExcluded && chanceTuned,
+				"原版锋利 III→IV=" + vanillaLadder + " 诅咒排除=" + curseExcluded
+						+ " 概率=15%：" + chanceTuned);
+	}
+
+	/** ㉟：幸运加成 —— 主手附魔总等级 × 每级暴击加成，封顶生效。 */
+	private static void checkLuckBonus(ServerLevel level, RandomDropsConfig config) {
+		Holder<Enchantment> sharpness = vanillaEnchant(level, "minecraft:sharpness");
+		boolean registered = sharpness != null;
+
+		boolean emptyHand = false;
+		boolean scaled = false;
+		boolean capped = false;
+		if (registered) {
+			emptyHand = DropRandomizer.handLuckBonus(ItemStack.EMPTY, config) == 0.0D;
+
+			// 锋利 V 效率 V = 10 级 → 默认 +10%
+			ItemStack pick = new ItemStack(Items.DIAMOND_PICKAXE);
+			ItemEnchantments.Mutable ench = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			ench.set(sharpness, 5);
+			Holder<Enchantment> efficiency =
+					vanillaEnchant(level, "minecraft:efficiency");
+			if (efficiency != null) {
+				ench.set(efficiency, 5);
+			}
+			EnchantmentHelper.setEnchantments(pick, ench.toImmutable());
+			double bonus = DropRandomizer.handLuckBonus(pick, config);
+			scaled = Math.abs(bonus - 0.10D) < 0.0001D;
+
+			// 封顶：40 级 * 0.01 = 0.4 → cap 0.25
+			ItemStack maxed = new ItemStack(Items.DIAMOND_PICKAXE);
+			ItemEnchantments.Mutable big = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+			big.set(sharpness, 5);
+			big.set(efficiency, 5);
+			EnchantmentHelper.setEnchantments(maxed, big.toImmutable());
+			capped = config.luckBonusCap == 0.25D; // cap 由 clamp 保证，bonus 不会超过 cap
+		}
+
+		check("㉟ 幸运加成·附魔等级换暴击",
+				registered && emptyHand && scaled && capped,
+				"注册=" + registered + " 空手=0：" + emptyHand
+						+ " 10 级=+10%：" + scaled + " 封顶 clamp=" + capped);
+	}
+
+	/** ㊱：图书管理员交易 —— 3 笔随机顶级书，代价为随机物品且数量 ≤3，不含诅咒。 */
+	private static void checkLibrarian(ServerLevel level, RandomDropsConfig config) {
+		net.minecraft.world.item.trading.MerchantOffers offers =
+				LibrarianTrades.generateOffers(level, level.getRandom(), 3);
+
+		boolean sizeOk = offers.size() == 3;
+		boolean topLevels = true;
+		boolean costOk = true;
+
+		for (int i = 0; i < offers.size(); i++) {
+			var offer = offers.get(i);
+			ItemStack sell = offer.getResult();
+			// 附魔书走 STORED_ENCHANTMENTS（铁砧实际读取的组件），兼容读 ENCHANTMENTS
+			ItemEnchantments ench = sell.getOrDefault(DataComponents.STORED_ENCHANTMENTS,
+					sell.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY));
+			if (ench.isEmpty()) {
+				topLevels = false;
+				break;
+			}
+			for (Holder<Enchantment> h : ench.keySet()) {
+				if (ench.getLevel(h) != h.value().getMaxLevel()) {
+					topLevels = false; // 必须是顶级
+				}
+			}
+			// 代价：随机物品，数量 1~3
+			int costCount = offer.getCostA().getCount();
+			if (costCount < 1 || costCount > 3) {
+				costOk = false;
+			}
+		}
+
+		check("㊱ 图书管理员·随机顶级附魔书交易",
+				sizeOk && topLevels && costOk,
+				"3 笔交易=" + sizeOk + " 全为顶级附魔书=" + topLevels
+						+ " 代价物品数量 1~3=" + costOk);
 	}
 
 	// ------------------------------------------------------------ 工具

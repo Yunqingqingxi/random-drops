@@ -50,6 +50,12 @@ public class BlockDropsMixin {
 			return;
 		}
 
+		// 植被类（花草 / 枯叶堆 / 水草）：什么都不掉 —— 连原版的小麦种子也不掉
+		if (DropRandomizer.isNoLootPlant(state)) {
+			cir.setReturnValue(java.util.List.of());
+			return;
+		}
+
 		cir.setReturnValue(DropRandomizer.rollBlockDrop(level, pos, null));
 	}
 
@@ -67,6 +73,12 @@ public class BlockDropsMixin {
 			BlockEntity blockEntity, Entity breaker, ItemInstance tool, CallbackInfoReturnable<List<ItemStack>> cir) {
 		if (!RandomDropsConfig.get().enableBlockDrops
 				|| DropRandomizer.isDroplessBlock(state)) {
+			return;
+		}
+
+		// 植被类：什么都不掉
+		if (DropRandomizer.isNoLootPlant(state)) {
+			cir.setReturnValue(java.util.List.of());
 			return;
 		}
 

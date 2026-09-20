@@ -18,23 +18,21 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 击杀生物 → 随机升级一件身上装备的本模组附魔。
- *
- * <p><b>规则</b>：玩家击杀生物后按 {@code killEnchantLevelUpChance} 掷骰，命中时从
- * 六个装备槽里挑一件「带着本模组自定义附魔且还没到满级」的装备，该附魔等级 +1。
- *
- * <ul>
- *   <li><b>只升不降</b>：等级永远 +1 递进（I→II→III），不存在替换降级 ——
- *       「由高的替换低的」在实现上等价于「只允许更高的等级写回」，天然成立；</li>
- *   <li><b>满级封顶</b>：到 {@link ModEnchantments#MAX_LEVEL}（III 级）后该件装备
- *       不再进入候选池，击杀再多也不会溢出；</li>
- *   <li><b>只升级已装备的</b>：背包里和附魔书上的不参与 —— 想升级就把附魔穿在身上去打怪。</li>
- * </ul>
- *
- * <p>附魔等级的效果缩放见 {@link EnchantmentEffects}：等级越高，雷霆越频繁、磁石吸得越远、
- * 贪婪触发越多 —— 相应地，诅咒（负重/易碎）也随等级更狠，升级诅咒装备是真实的抉择。
- */
+	/**
+	 * 击杀生物 → 随机升级一件身上装备的附魔（v1.14.1 起覆盖<b>全部附魔</b>，含原版）。
+	 *
+	 * <p><b>规则</b>：玩家击杀生物后按 {@code killEnchantLevelUpChance} 掷骰，命中时从
+	 * 六个装备槽里挑一件「带着任意附魔且还没到该附魔自身满级」的装备，等级 +1。
+	 *
+	 * <ul>
+	 *   <li><b>只升不降</b>：等级永远 +1 递进（锋利 III→IV→V），不存在替换降级；</li>
+	 *   <li><b>各自封顶</b>：以附魔自身的 max_level 为上限（锋利 V / 保护 IV / 本模组 III），
+	 *       满级的附魔不进入候选池；</li>
+	 *   <li><b>诅咒不升</b>：进 {@code #minecraft:curse} 标签的附魔（绑定/消失/负重/易碎）
+	 *       被排除 —— 升级诅咒毫无意义；</li>
+	 *   <li><b>只升级已装备的</b>：背包里和附魔书上的不参与 —— 想升级就把附魔穿在身上去打怪。</li>
+	 * </ul>
+	 */
 public final class EnchantmentLevelUps {
 	private EnchantmentLevelUps() {
 	}
@@ -90,11 +88,11 @@ public final class EnchantmentLevelUps {
 			}
 
 			for (Holder<Enchantment> h : ench.keySet()) {
-				if (h == null || !isOurs(h)) {
+				if (h == null || isCurse(h)) {
 					continue;
 				}
 				int lv = ench.getLevel(h);
-				if (lv > 0 && lv < ModEnchantments.MAX_LEVEL) {
+				if (lv > 0 && lv < h.value().getMaxLevel()) {
 					candidates.add(new Candidate(slot, h, lv));
 				}
 			}
@@ -128,7 +126,7 @@ public final class EnchantmentLevelUps {
 	 */
 	static int levelUp(ItemStack stack, Holder<Enchantment> h) {
 		int cur = ModEnchantments.getLevel(stack, h);
-		if (cur <= 0 || cur >= ModEnchantments.MAX_LEVEL) {
+		if (cur <= 0 || cur >= h.value().getMaxLevel()) {
 			return cur; // 满级封顶 / 未附魔：不动
 		}
 
@@ -139,11 +137,9 @@ public final class EnchantmentLevelUps {
 		return cur + 1;
 	}
 
-	/** 这个附魔是不是本模组注册的（Holder 的 key 命名空间 = randomdrops）。 */
-	private static boolean isOurs(Holder<Enchantment> h) {
-		return h.unwrapKey()
-				.map(k -> k.identifier().getNamespace().equals(RandomDrops.MOD_ID))
-				.orElse(false);
+	/** 进 {@code #minecraft:curse} 标签的附魔（绑定 / 消失 / 负重 / 易碎）不参与升级。 */
+	private static boolean isCurse(Holder<Enchantment> h) {
+		return h.is(net.minecraft.tags.EnchantmentTags.CURSE);
 	}
 
 	private static String slotName(EquipmentSlot slot) {

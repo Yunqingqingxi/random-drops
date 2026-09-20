@@ -3,6 +3,7 @@ package com.randomdrops;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -125,6 +126,44 @@ public final class DropRandomizer {
 		Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
 		return id != null && RandomDropsConfig.get().noDropBlocks.contains(id.toString());
 	}
+
+	/**
+	 * <b>植被类方块</b>（v1.14.1）：花草 / 枯叶堆 / 水草等被破坏时<b>什么都不掉</b> ——
+	 * 连原版的小麦种子也不掉，更不允许随机掉落借道。
+	 *
+	 * <p>覆盖：各类花（含 #minecraft:flowers 标签）、各种草与蕨、枯灌木、海草 / 海带、
+	 * 枯叶堆、灌木、萤火虫灌木、粉红色花瓣、眼眸花。
+	 */
+	public static boolean isNoLootPlant(net.minecraft.world.level.block.state.BlockState state) {
+		if (state == null) {
+			return false;
+		}
+
+		// 全部花卉走原版标签（含花苞与盛开变种），个别 26.2 新增植物直接枚举
+		if (state.is(net.minecraft.tags.BlockTags.FLOWERS)) {
+			return true;
+		}
+
+		return NO_LOOT_PLANTS.contains(state.getBlock());
+	}
+
+	/** 不允许任何掉落的植被方块（花草 / 水草 / 枯叶堆等，v1.14.1）。 */
+	private static final java.util.Set<net.minecraft.world.level.block.Block> NO_LOOT_PLANTS =
+			java.util.Set.of(
+					net.minecraft.world.level.block.Blocks.SHORT_GRASS,
+					net.minecraft.world.level.block.Blocks.TALL_GRASS,
+					net.minecraft.world.level.block.Blocks.FERN,
+					net.minecraft.world.level.block.Blocks.LARGE_FERN,
+					net.minecraft.world.level.block.Blocks.DEAD_BUSH,
+					net.minecraft.world.level.block.Blocks.SEAGRASS,
+					net.minecraft.world.level.block.Blocks.TALL_SEAGRASS,
+					net.minecraft.world.level.block.Blocks.KELP,
+					net.minecraft.world.level.block.Blocks.KELP_PLANT,
+					net.minecraft.world.level.block.Blocks.LEAF_LITTER,
+					net.minecraft.world.level.block.Blocks.BUSH,
+					net.minecraft.world.level.block.Blocks.FIREFLY_BUSH,
+					net.minecraft.world.level.block.Blocks.TALL_DRY_GRASS,
+					net.minecraft.world.level.block.Blocks.PINK_PETALS);
 
 	public static List<ItemStack> rollBlockDrop(ServerLevel level, BlockPos pos, Entity breaker) {
 		RandomDropsConfig config = RandomDropsConfig.get();
@@ -508,8 +547,13 @@ public final class DropRandomizer {
 
 		// 暴击大爆：先单独掷一次，命中就必定从宝藏池出，不走后面的三段分支。
 		// 概率会被「进度分档」与「维度」放大 —— 后期 / 下界 / 末地都更爱暴击。
+		// v1.14.1 幸运加成：手持工具 / 武器的附魔总等级越高，暴击率越高（挖矿 / 击杀都看主手）。
 		double jackpotChance = Math.min(1.0D,
 				config.jackpotChance * Progression.jackpotMultiplier(level, config));
+		if (config.enableLuckBonus && cause instanceof Player holder) {
+			jackpotChance = Math.min(1.0D,
+					jackpotChance + handLuckBonus(holder.getMainHandItem(), config));
+		}
 
 		if (config.enableJackpot && jackpotChance > 0.0D && random.nextDouble() < jackpotChance) {
 			List<Item> treasure = jackpotPool();
@@ -707,6 +751,30 @@ public final class DropRandomizer {
 		}
 
 		return null;
+	}
+
+	/**
+	 * 幸运加成（v1.14.1）：主手物品的<b>附魔总等级</b> × 每级加成，封顶
+	 * {@code luckBonusCap}。诅咒不计入（背诅咒不是幸运）。空手 / 无附魔 = 0。
+	 */
+	static double handLuckBonus(ItemStack tool, RandomDropsConfig config) {
+		if (tool == null || tool.isEmpty() || config.luckBonusPerLevel <= 0.0D) {
+			return 0.0D;
+		}
+
+		ItemEnchantments ench = tool.get(DataComponents.ENCHANTMENTS);
+		if (ench == null || ench.isEmpty()) {
+			return 0.0D;
+		}
+
+		int totalLevels = 0;
+		for (Holder<Enchantment> h : ench.keySet()) {
+			if (h != null && !h.is(net.minecraft.tags.EnchantmentTags.CURSE)) {
+				totalLevels += ench.getLevel(h);
+			}
+		}
+
+		return Math.min(config.luckBonusCap, totalLevels * config.luckBonusPerLevel);
 	}
 
 	/**

@@ -17,7 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.MapPostProcessing;
+
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.material.MapColor;
@@ -295,14 +295,18 @@ public final class Bingos {
 
 	/**
 	 * 画一张 5×5 的 Bingo 板地图：128×128 像素上 25 个色块（每格约 25×25），
-	 * 未达成 = 金属灰，达成 = 草地绿；外圈一圈白色边框。地图<b>锁定</b>，不会渲染地形。
+	 * 未达成 = 金属灰，达成 = 草地绿；外圈一圈白色边框。
+	 *
+	 * <p>修「板子空白」bug：不能用 {@code MAP_POST_PROCESSING=LOCK} —— vanilla 对
+	 * 锁定地图完全停止同步（MapItem.update 直接返回，HoldingPlayer 建立不起来），
+	 * 玩家一张数据都收不到。改为<b>全图涂满</b>（无 0 像素，地形更新无处可写），
+	 * 不锁定，玩家手持时由 vanilla 的携带同步机制正常推送颜色。
 	 */
 	private static ItemStack paintMap(ServerLevel level, boolean[] done, String title) {
 		ItemStack map = net.minecraft.world.item.MapItem.create(level, 0, 0, (byte) 2, false, false);
 		if (map.isEmpty()) {
 			return map;
 		}
-		map.set(DataComponents.MAP_POST_PROCESSING, MapPostProcessing.LOCK);
 		MapItemSavedData data = net.minecraft.world.item.MapItem.getSavedData(map, level);
 		if (data == null) {
 			return map;
@@ -388,6 +392,16 @@ public final class Bingos {
 	}
 
 	// ------------------------------------------------------------ 自检辅助
+
+	/** 自检用：读取板子地图上某像素的颜色 id（0 = 未涂色；-1 = 地图数据缺失）。 */
+	static int mapPixelForTest(ServerLevel level, boolean killBoard, int x, int z) {
+		ItemStack stack = killBoard ? killMapStack : itemMapStack;
+		if (stack == null) {
+			return -1;
+		}
+		MapItemSavedData data = net.minecraft.world.item.MapItem.getSavedData(stack, level);
+		return data == null ? -1 : (data.colors[z * 128 + x] & 255);
+	}
 
 	/** 自检用：强制开两块板（绕过在线玩家检查；空服 broadcast 无害）。 */
 	static void forceStartBoardsForTest(MinecraftServer server, RandomDropsConfig config) {
