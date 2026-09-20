@@ -42,11 +42,12 @@
 ## 3. 常用命令
 
 ```bash
-# 队友克隆（SSH；推荐先配好 GitHub SSH key）
-git clone git@github.com:Yunqingqingxi/random-drops.git
+# 队友克隆（仓库公开，HTTPS 即可）
+git clone https://github.com/Yunqingqingxi/random-drops.git
 cd random-drops
 # 主开发分支叫 26.2（跟随 MC 版本），克隆后即在本地
 git checkout 26.2
+# 新手 / AI 接手提示词见 AI_ONBOARDING.md
 ```
 
 ```bash
