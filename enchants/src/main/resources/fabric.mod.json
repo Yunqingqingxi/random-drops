@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "randomdrops-enchants",
+	"version": "${version}",
+	"name": "Random Drops: Enchantments",
+	"description": "附魔突破模块：雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重诅咒 / 易碎诅咒 / 汲取 / 疾风 / 威压，以及击杀升级、图书管理员重做。可独立嵌入其它项目。",
+	"authors": [
+		"random-drops"
+	],
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.randomdrops.RandomDropsEnchants"
+		]
+	},
+	"mixins": [
+		"randomdrops-enchants.mixins.json"
+	],
+	"depends": {
+		"fabricloader": "~0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"randomdrops": ">=1.15.0"
+	}
+}

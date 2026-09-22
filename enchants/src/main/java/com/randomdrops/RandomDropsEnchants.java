@@ -1,0 +1,55 @@
+package com.randomdrops;
+
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * 附魔突破模块入口：雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重诅咒 / 易碎诅咒 / 汲取 / 疾风 / 威压，
+ * 以及击杀升级、图书管理员重做。
+ *
+ * <p>本模块依赖 {@code randomdrops}（core）核心框架，自身通过 {@link SelfTest#registerStep} 把
+ * 属于附魔的若干自检步骤挂进统一的自检流程，避免 core 反向依赖本模块。
+ */
+public class RandomDropsEnchants implements ModInitializer {
+	public static final String MOD_ID = "randomdrops-enchants";
+	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	@Override
+	public void onInitialize() {
+		// 附魔效果（雷霆 / 臭脚 / 碎裂等）注册
+		EnchantmentEffects.register();
+		EnchantmentLevelUps.register();
+
+		// 雷霆万钧 / 臭脚 每刻结算（碎裂由攻击 / 破坏方块的钩子驱动）
+		ServerTickEvents.END_SERVER_TICK.register(server -> EnchantmentEffects.tick(server));
+
+		// 关服清掉附魔效果计时与击杀升级的缓存
+		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			EnchantmentEffects.reset();
+			EnchantmentLevelUps.reset();
+		});
+
+		// 把附魔相关的自检步骤挂进统一自检流程
+		SelfTest.registerStep("⑲ 臭脚·花草枯萎+亡灵生成",
+				ctx -> EnchantSelfTest.checkStinkyFeet(ctx.server, ctx.level, ctx.config));
+		SelfTest.registerStep("㉑ 磁石·注册+吸附",
+				ctx -> EnchantSelfTest.checkMagnet(ctx.level, ctx.config));
+		SelfTest.registerStep("㉓ 负重诅咒·注册+移速减益",
+				ctx -> EnchantSelfTest.checkCurseBurden(ctx.level, ctx.config));
+		SelfTest.registerStep("㉔ 易碎诅咒·注册+护甲碎裂",
+				ctx -> EnchantSelfTest.checkCurseFrailty(ctx.level, ctx.config));
+		SelfTest.registerStep("㉖ 新附魔·汲取/疾风/威压",
+				ctx -> EnchantSelfTest.checkNewEnchantments(ctx.level, ctx.config));
+		SelfTest.registerStep("㉗ 击杀升级·只升不降+满级封顶",
+				ctx -> EnchantSelfTest.checkEnchantLevelUp(ctx.level, ctx.config));
+		SelfTest.registerStep("㉞ 升级全附魔·含原版+排除诅咒+15%",
+				ctx -> EnchantSelfTest.checkUniversalLevelUp(ctx.level, ctx.config));
+		SelfTest.registerStep("㊱ 图书管理员·随机顶级附魔书交易",
+				ctx -> EnchantSelfTest.checkLibrarian(ctx.level, ctx.config));
+
+		LOGGER.info("[randomdrops-enchants] 附魔模块已加载");
+	}
+}

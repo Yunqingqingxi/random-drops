@@ -1,0 +1,65 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :core:compileJava
+D:\code\random-drops\core\src\main\java\com\randomdrops\RandomDrops.java:4: 错误: 找不到符号
+import com.randomdrops.EnchantmentEffects;
+                      ^
+  符号:   类 EnchantmentEffects
+  位置: 程序包 com.randomdrops
+D:\code\random-drops\core\src\main\java\com\randomdrops\RandomDrops.java:5: 错误: 找不到符号
+import com.randomdrops.GlobalEvents;
+                      ^
+  符号:   类 GlobalEvents
+  位置: 程序包 com.randomdrops
+D:\code\random-drops\core\src\main\java\com\randomdrops\SelfTest.java:1243: 错误: 找不到符号
+				e -> EnchantmentEffects.isUndead(e, level)).size();
+				     ^
+  符号:   变量 EnchantmentEffects
+  位置: 类 SelfTest
+3 个错误
+
+> Task :core:compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/code/random-drops/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\core\src\main\java\com\randomdrops\RandomDrops.java:4: 错误: 找不到符号
+  import com.randomdrops.EnchantmentEffects;
+                        ^
+    符号:   类 EnchantmentEffects
+    位置: 程序包 com.randomdrops
+  D:\code\random-drops\core\src\main\java\com\randomdrops\RandomDrops.java:5: 错误: 找不到符号
+  import com.randomdrops.GlobalEvents;
+                        ^
+    符号:   类 GlobalEvents
+    位置: 程序包 com.randomdrops
+  D:\code\random-drops\core\src\main\java\com\randomdrops\SelfTest.java:1243: 错误: 找不到符号
+  				e -> EnchantmentEffects.isUndead(e, level)).size();
+  				     ^
+    符号:   变量 EnchantmentEffects
+    位置: 类 SelfTest
+  3 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 14s
+1 actionable task: 1 executed

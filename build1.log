@@ -1,0 +1,74 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :core:compileJava UP-TO-DATE
+> Task :events:processResources
+> Task :enchants:processResources
+> Task :mobs:processResources
+> Task :events:compileJava UP-TO-DATE
+> Task :events:classes
+> Task :enchants:compileJava UP-TO-DATE
+> Task :enchants:classes
+> Task :mobs:compileJava UP-TO-DATE
+> Task :mobs:classes
+> Task :events:processIncludeJars
+> Task :core:processResources
+> Task :core:classes
+> Task :enchants:processIncludeJars
+> Task :mobs:processIncludeJars
+> Task :core:processIncludeJars
+> Task :mobs:jar
+> Task :events:jar
+> Task :enchants:jar
+> Task :core:jar
+> Task :mobs:sourcesJar
+> Task :mobs:assemble
+> Task :mobs:compileTestJava NO-SOURCE
+> Task :mobs:processTestResources NO-SOURCE
+> Task :mobs:testClasses UP-TO-DATE
+> Task :mobs:test NO-SOURCE
+> Task :mobs:validateAccessWidener NO-SOURCE
+> Task :mobs:check UP-TO-DATE
+> Task :mobs:build
+> Task :events:sourcesJar
+> Task :events:assemble
+> Task :events:compileTestJava NO-SOURCE
+> Task :events:processTestResources NO-SOURCE
+> Task :events:testClasses UP-TO-DATE
+> Task :events:test NO-SOURCE
+> Task :events:validateAccessWidener NO-SOURCE
+> Task :events:check UP-TO-DATE
+> Task :events:build
+> Task :enchants:sourcesJar
+> Task :enchants:assemble
+> Task :enchants:compileTestJava NO-SOURCE
+> Task :enchants:processTestResources NO-SOURCE
+> Task :enchants:testClasses UP-TO-DATE
+> Task :enchants:test NO-SOURCE
+> Task :enchants:validateAccessWidener NO-SOURCE
+> Task :enchants:check UP-TO-DATE
+> Task :enchants:build
+> Task :core:sourcesJar
+> Task :core:assemble
+> Task :core:compileTestJava NO-SOURCE
+> Task :core:processTestResources NO-SOURCE
+> Task :core:testClasses UP-TO-DATE
+> Task :core:test NO-SOURCE
+> Task :core:validateAccessWidener NO-SOURCE
+> Task :core:check UP-TO-DATE
+> Task :core:build
+
+BUILD SUCCESSFUL in 12s
+20 actionable tasks: 16 executed, 4 up-to-date

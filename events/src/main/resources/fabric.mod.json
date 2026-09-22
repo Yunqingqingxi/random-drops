@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "randomdrops-events",
+	"version": "${version}",
+	"name": "Random Drops: Events",
+	"description": "全局事件模块：青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到，以及猎杀悬赏、物品与击杀 Bingo。可独立嵌入其它项目。",
+	"authors": [
+		"random-drops"
+	],
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.randomdrops.RandomDropsEvents"
+		]
+	},
+	"depends": {
+		"fabricloader": "~0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"randomdrops": ">=1.15.0"
+	}
+}

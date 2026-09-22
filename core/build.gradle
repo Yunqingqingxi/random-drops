@@ -1,0 +1,50 @@
+plugins {
+	id 'net.fabricmc.fabric-loom'
+	id 'maven-publish'
+}
+
+base {
+	archivesName = "randomdrops-core"
+}
+
+loom {
+	mods {
+		"randomdrops" {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+dependencies {
+	// 26.2 是自定义 MC 版本，其 minecraft jar 分发时已是「官方命名」形态，
+	// 无需 yarn/intermediary 映射；NoRemap loom 用普通 implementation 挂依赖即可。
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+java {
+	withSourcesJar()
+}
+
+processResources {
+	def ver = project.version
+	inputs.property "version", ver
+	filesMatching("fabric.mod.json") {
+		expand "version": ver
+	}
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.name}" }
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+}

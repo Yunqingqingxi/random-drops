@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.randomdrops.mobs.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"PhantomCreeperMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

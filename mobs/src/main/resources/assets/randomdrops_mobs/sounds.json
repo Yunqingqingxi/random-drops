@@ -1,0 +1,11 @@
+{
+	"phantom_creeper": {
+		"category": "neutral",
+		"sounds": [
+			{
+				"name": "randomdrops_mobs:phantom_creeper",
+				"stream": false
+			}
+		]
+	}
+}

@@ -1,81 +1,36 @@
+// 多子项目（core / enchants / events / mobs）共享的构建约定。
+// 关键：插件 id 必须是 `net.fabricmc.fabric-loom`（NoRemap 变体），不是 `fabric-loom`
+// （完整版 LoomGradlePlugin）。原因：26.2 是自定义 MC 版本，分发时已是「官方命名」形态，
+// 无 yarn/intermediary 映射。完整版 loom 强制要求 mappings 配置有依赖（否则报
+// “Configuration 'mappings' has no dependencies”），且其 disableObfuscation 开关虽能
+// 跳过 mappings，却会连 remap 系配置（modImplementation/modApi）一起跳过——两头堵。
+// NoRemap 变体本身就是为「无需重映射」的场景设计的：不需要 mappings，也注册 minecraft 配置，
+// 依赖用普通 implementation 即可。拆分前的单模块构建（v1.13.0~v1.14.1）正是这么工作的。
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 }
 
-repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+allprojects {
+	group = 'com.randomdrops'
 }
 
-loom {
-	splitEnvironmentSourceSets()
+// 子项目共享、且不依赖 loom/java 插件扩展的约定。
+// 凡是需要 loom 扩展（minecraft()/loom{}）或 java 扩展（components.java/processResources/
+// jar/sourceSets）的配置，都写在各子项目自己的 build.gradle 里——因为 root 的 subprojects
+// 块在子项目 plugins{} 之前执行，那时 loom/java 尚未挂上，引用其扩展会报「Could not find method」。
+subprojects {
+	version = rootProject.version
 
-	mods {
-		"randomdrops" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
-}
-
-dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-}
-
-processResources {
-	def version = project.version
-	inputs.property "version", version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 24
-}
-
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_24
-	targetCompatibility = JavaVersion.VERSION_24
-}
-
-jar {
-	def projectName = project.name
-	inputs.property "projectName", projectName
-
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
 	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		mavenCentral()
+	}
+
+	// JDK 24 字节码（工具链无关，仅控制 release；configureEach 是惰性注册，安全）。
+	tasks.withType(JavaCompile).configureEach {
+		it.options.release = 24
 	}
 }

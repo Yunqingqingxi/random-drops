@@ -1,0 +1,91 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :core:compileJava
+
+> Task :mobs:compileJava FAILED
+D:\code\random-drops\mobs\src\main\java\com\randomdrops\MobSelfTest.java:12: 错误: 找不到符号
+import net.minecraft.world.level.Heightmap;
+                                ^
+  符号:   类 Heightmap
+  位置: 程序包 net.minecraft.world.level
+D:\code\random-drops\mobs\src\main\java\com\randomdrops\mobs\mixin\PhantomCreeperMixin.java:42: 错误: 不兼容的类型: Reference<SoundEvent>无法转换为SoundEvent
+			customSound = BuiltInRegistries.SOUND_EVENT.get(SOUND_ID).orElse(null);
+			                                                                ^
+D:\code\random-drops\mobs\src\main\java\com\randomdrops\MobSelfTest.java:44: 错误: 程序包Heightmap不存在
+					BlockPos at = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(0, 64, 0));
+					                                             ^
+3 个错误
+
+> Task :events:compileJava FAILED
+D:\code\random-drops\events\src\main\java\com\randomdrops\GlobalEvents.java:286: 错误: 找不到符号
+					EnchantmentEffects.strikeLightning(lvl, pos.getX() + 0.5, lvl.getHeight(
+					^
+  符号:   变量 EnchantmentEffects
+  位置: 类 GlobalEvents
+注: D:\code\random-drops\events\src\main\java\com\randomdrops\GlobalEvents.java使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+1 个错误
+
+> Task :enchants:compileJava
+
+[Incubating] Problems report is available at: file:///D:/code/random-drops/build/reports/problems/problems-report.html
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':mobs:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\mobs\src\main\java\com\randomdrops\mobs\mixin\PhantomCreeperMixin.java:42: 错误: 不兼容的类型: Reference<SoundEvent>无法转换为SoundEvent
+  			customSound = BuiltInRegistries.SOUND_EVENT.get(SOUND_ID).orElse(null);
+  			                                                                ^
+  D:\code\random-drops\mobs\src\main\java\com\randomdrops\MobSelfTest.java:12: 错误: 找不到符号
+  import net.minecraft.world.level.Heightmap;
+                                  ^
+    符号:   类 Heightmap
+    位置: 程序包 net.minecraft.world.level
+  D:\code\random-drops\mobs\src\main\java\com\randomdrops\MobSelfTest.java:44: 错误: 程序包Heightmap不存在
+  					BlockPos at = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(0, 64, 0));
+  					                                             ^
+  3 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':events:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  注: D:\code\random-drops\events\src\main\java\com\randomdrops\GlobalEvents.java使用或覆盖了已过时的 API。
+  注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+  D:\code\random-drops\events\src\main\java\com\randomdrops\GlobalEvents.java:286: 错误: 找不到符号
+  					EnchantmentEffects.strikeLightning(lvl, pos.getX() + 0.5, lvl.getHeight(
+  					^
+    符号:   变量 EnchantmentEffects
+    位置: 类 GlobalEvents
+  1 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+BUILD FAILED in 19s
+4 actionable tasks: 4 executed

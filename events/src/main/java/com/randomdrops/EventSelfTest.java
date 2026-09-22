@@ -1,0 +1,302 @@
+package com.randomdrops;
+import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.animal.frog.Frog;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * 开服自检：把这一批功能逐条跑一遍，结论直接写进日志。
+ *
+ * <p>为什么要在<b>真服务器</b>上跑而不是写单元测试：这些功能全都要摸到
+ * {@code ServerLevel}、实体生成、掉落路径和广播，纯 mock 测不出「真的能用」。
+ * 所以自检挂在 {@code SERVER_STARTED} 上，拿真实的 {@code overworld} 当实验场。
+ *
+ * <p>触发方式：配置里把 {@code selfTestRolls} 设成大于 0 的数（比如 300），
+ * 开服时就会跑一遍；跑完改回 0 即可关闭。也可以用 {@code /randomdrops selftest} 随时手动跑。
+ *
+ * <p>自检期间 {@link SessionStats} 是暂停的 —— 几千次假掉落不该污染「本局战绩」。
+ */
+
+import static com.randomdrops.SelfTest.*;
+
+public final class EventSelfTest {
+	private EventSelfTest() {
+	}
+
+static void checkGlobalEvents(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		boolean savedEnabled = config.enableEvents;
+		boolean savedHud = config.eventHudEnabled;
+		boolean savedFrog = config.enableFrogRain;
+		boolean savedMeteor = config.enableMeteorShower;
+
+		config.enableEvents = true;
+		config.eventHudEnabled = true;
+		config.enableFrogRain = true;
+		config.enableMeteorShower = true;
+
+		boolean hudOk = false;
+		boolean triggered = false;
+		boolean nameOk = false;
+		boolean frogOk = false;
+		boolean meteorOk = true;
+		try {
+			ServerBossEvent hud = GlobalEvents.ensureHudForTest();
+			hudOk = hud != null;
+
+			config.enableMeteorShower = false; // 只测青蛙雨，避免名字混淆
+			GlobalEvents.forceTriggerNoPlayerCheck(server, config);
+			triggered = GlobalEvents.activeEventCount() > 0;
+
+			GlobalEvents.updateHudForTest(server, config, server.getTickCount());
+			nameOk = hud.getName().getString().contains("青蛙雨");
+
+			BlockPos origin = new BlockPos(0, 90, 0);
+			int before = countFrogs(level, origin, 40.0D);
+			GlobalEvents.spawnFrogAt(level, origin.getX() + 0.5, origin.getY() + 10.0, origin.getZ() + 0.5);
+			int after = countFrogs(level, origin, 40.0D);
+			frogOk = after > before;
+
+			// 真实陨石：需要 LivingEntity owner —— 用盔甲架充当，验证生成不崩且进入追踪
+			ArmorStand meteorOwner = spawnArmorStand(level, origin);
+			try {
+				meteorOk = meteorOwner != null
+						&& GlobalEvents.spawnMeteorEntity(level, meteorOwner,
+								origin.getX() + 0.5, origin.getY(), origin.getZ() + 0.5, config);
+			} catch (Throwable t) {
+				meteorOk = false;
+			} finally {
+				if (meteorOwner != null) {
+					meteorOwner.discard();
+				}
+				GlobalEvents.processMeteorsForTest(config);
+			}
+		} finally {
+			config.enableEvents = savedEnabled;
+			config.eventHudEnabled = savedHud;
+			config.enableFrogRain = savedFrog;
+			config.enableMeteorShower = savedMeteor;
+			GlobalEvents.reset();
+		}
+
+		check("⑳ 全局事件·青蛙雨/陨石+HUD",
+				hudOk && triggered && nameOk && frogOk && meteorOk,
+				"HUD创建=" + hudOk + " 触发=" + triggered + " HUD含「青蛙雨」=" + nameOk
+						+ " 青蛙生成=" + frogOk + " 陨石不崩=" + meteorOk);
+	}
+
+	
+static void checkEventsFix(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		boolean savedEnabled = config.enableEvents;
+		boolean savedHud = config.eventHudEnabled;
+		config.enableEvents = true;
+		config.eventHudEnabled = true;
+		config.enableFrogRain = true;
+		config.enableMeteorShower = true;
+
+		boolean hudOk = false;
+		boolean dualShown = false;
+		try {
+			GlobalEvents.forceTriggerNoPlayerCheck(server, config); // 双事件场景一次到位
+			GlobalEvents.updateHudForTest(server, config, server.getTickCount());
+
+			ServerBossEvent hud = GlobalEvents.ensureHudForTest();
+			hudOk = hud != null;
+			String name = hud == null ? "" : hud.getName().getString();
+			dualShown = name.contains("青蛙雨") && name.contains("天降陨石") && name.contains("+");
+		} finally {
+			config.enableEvents = savedEnabled;
+			config.eventHudEnabled = savedHud;
+			GlobalEvents.reset();
+		}
+
+		check("㉕ 全局事件修复·双事件 HUD",
+				hudOk && dualShown,
+				"HUD创建=" + hudOk + " 双事件全显示（事件名 + 事件名）=" + dualShown);
+	}
+
+	
+static void checkMeteorRealism(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		boolean savedResidue = config.meteorOreResidue;
+		config.meteorOreResidue = true;
+		try {
+			ArmorStand owner = spawnArmorStand(level, new BlockPos(0, 90, 0));
+			boolean spawned = owner != null
+					&& GlobalEvents.spawnMeteorEntity(level, owner, 0.5, 90.0, 0.5, config);
+			boolean tracked = spawned && GlobalEvents.trackedMeteorCountForTest() == 1;
+			if (owner != null) {
+				owner.discard();
+			}
+
+			// 模拟陨石撞地爆炸：直接移除实体，驱动矿物残留结算
+			if (tracked) {
+				for (var e : level.getEntities((Entity) null,
+						new AABB(-4, 100, -4, 4, 130, 4), x -> true)) {
+					e.discard();
+				}
+			}
+			GlobalEvents.processMeteorsForTest(config);
+
+			// 落点附近应出现矿物（爆炸坑内嵌矿）
+			boolean oreFound = false;
+			int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, 0, 0);
+			for (int dx = -2; dx <= 2 && !oreFound; dx++) {
+				for (int dz = -2; dz <= 2 && !oreFound; dz++) {
+					for (int dy = 0; dy < 6 && !oreFound; dy++) {
+						var st = level.getBlockState(new BlockPos(dx, surfaceY - 1 - dy, dz));
+						Identifier bid = BuiltInRegistries.BLOCK.getKey(st.getBlock());
+						oreFound = bid != null && bid.toString().endsWith("_ore");
+					}
+				}
+			}
+
+			check("㉘ 陨石真实化·天降实体+矿物残留",
+					spawned && tracked && oreFound,
+					"真实实体生成=" + spawned + " 进入追踪=" + tracked
+							+ " 爆炸后残留矿物=" + oreFound);
+		} finally {
+			config.meteorOreResidue = savedResidue;
+		}
+	}
+
+	
+static void checkBounty(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		Bounties.clearForTest();
+		Bounties.forcePublishForTest(server, config);
+
+		boolean published = Bounties.currentTargetForTest() != null
+				&& Bounties.requiredKillsForTest() > 0;
+
+		boolean ladder = false;
+		boolean done = false;
+		if (published) {
+			int need = Bounties.requiredKillsForTest();
+			boolean early = false;
+			for (int i = 0; i < need - 1; i++) {
+				early = Bounties.bumpProgress();
+				if (early) {
+					break; // 未满就达成 = 有 bug
+				}
+			}
+			ladder = !early && Bounties.currentProgressForTest() == need - 1;
+			// bumpProgress 只负责进度判定（奖励与清空走 onDeath→completeBounty 路径）
+			done = Bounties.bumpProgress();
+		}
+		Bounties.clearForTest();
+
+		check("㉚ 猎杀悬赏·发布+进度+达成",
+				published && ladder && done,
+				"发布=" + published + " 进度累积=" + ladder + " 达成判定=" + done);
+	}
+
+	
+static void checkBingo(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		Bingos.restartItemBoardForTest();
+		Bingos.forceStartBoardsForTest(server, config);
+
+		boolean itemOn = Bingos.itemBoardActiveForTest();
+		boolean killOn = Bingos.killBoardActiveForTest();
+
+		// 12 条线结构：每条 5 格、下标合法；格子跨线共享是 Bingo 的正常形态（中心格 4 线共享）
+		boolean linesOk = true;
+		Set<Integer> covered = new HashSet<>();
+		for (int[] line : Bingos.linesForTest()) {
+			if (line.length != 5) {
+				linesOk = false;
+				break;
+			}
+			for (int cell : line) {
+				if (cell < 0 || cell >= 25) {
+					linesOk = false;
+				} else {
+					covered.add(cell);
+				}
+			}
+		}
+		// 12 条线应覆盖全部 25 格（否则有格子永远无法连线）
+		linesOk = linesOk && covered.size() == 25;
+
+		boolean targetsOk = Bingos.itemBoardActiveForTest() && Bingos.itemDoneCountForTest() == 0;
+
+		// 地图数据真实涂色（修「板子空白」bug 的回归断言）：边框白 + 中心格灰，都应非 0
+		int framePixel = Bingos.mapPixelForTest(level, false, 2, 2);
+		int cellPixel = Bingos.mapPixelForTest(level, false, 64, 64);
+		boolean painted = framePixel > 0 && cellPixel > 0;
+
+		check("㉛ Bingo·双板+地图+连线结构",
+				itemOn && killOn && linesOk && targetsOk && painted,
+				"物品板=" + itemOn + " 击杀板=" + killOn + " 12 条线结构=" + linesOk
+						+ " 初始进度干净=" + targetsOk
+						+ " 地图涂色(边框/格)=" + framePixel + "/" + cellPixel);
+	}
+
+	
+static void checkNewEvents(MinecraftServer server, ServerLevel level, RandomDropsConfig config) {
+		boolean savedEnabled = config.enableEvents;
+		config.enableEvents = true;
+
+		boolean ran = true;
+		String hudName = "";
+		try {
+			GlobalEvents.forceRunEventForTest(GlobalEvents.EventType.THUNDER_POOL, server, config);
+			GlobalEvents.forceRunEventForTest(GlobalEvents.EventType.BLOOD_MOON, server, config);
+			GlobalEvents.forceRunEventForTest(GlobalEvents.EventType.FORTUNE_RAIN, server, config);
+
+			// 各分支推进一个结算步（雷池落雷 / 血月刷怪 / 福到掉物），不抛异常即通过
+			GlobalEvents.runEventsOnceForTest(server, config);
+
+			GlobalEvents.updateHudForTest(server, config, server.getTickCount());
+			hudName = GlobalEvents.ensureHudForTest().getName().getString();
+		} catch (Throwable t) {
+			ran = false;
+		} finally {
+			config.enableEvents = savedEnabled;
+			GlobalEvents.reset();
+		}
+
+		boolean hudOk = hudName.contains("雷池") && hudName.contains("血月") && hudName.contains("福到");
+
+		check("㉜ 新事件·雷池/血月/福到",
+				ran && hudOk,
+				"三事件结算不崩=" + ran + " HUD 全显示=" + hudOk);
+	}
+
+	
+}
