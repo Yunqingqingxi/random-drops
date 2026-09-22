@@ -1,23 +1,27 @@
-// 多子项目（core / enchants / events / mobs）共享的构建约定。
-// 关键：插件 id 必须是 `net.fabricmc.fabric-loom`（NoRemap 变体），不是 `fabric-loom`
-// （完整版 LoomGradlePlugin）。原因：26.2 是自定义 MC 版本，分发时已是「官方命名」形态，
-// 无 yarn/intermediary 映射。完整版 loom 强制要求 mappings 配置有依赖（否则报
-// “Configuration 'mappings' has no dependencies”），且其 disableObfuscation 开关虽能
-// 跳过 mappings，却会连 remap 系配置（modImplementation/modApi）一起跳过——两头堵。
-// NoRemap 变体本身就是为「无需重映射」的场景设计的：不需要 mappings，也注册 minecraft 配置，
-// 依赖用普通 implementation 即可。拆分前的单模块构建（v1.13.0~v1.14.1）正是这么工作的。
+// yunxigames —— 一个系列，多个玩法包。
+//
+// 结构：root 只做聚合与共享构建约定；每个子项目是一个独立可玩的玩法包：
+//   core     yg-core      基础库（配置框架 / 自检框架 / 战绩 / 播报），不是独立 mod，
+//                         编译后的类会被打进每个玩法包的 jar（见下方 fat-jar 逻辑）
+//   drops    yg_drops     随机掉落（引擎 + 全部掉落玩法 + /yg 主命令）
+//   enchants yg_enchants  更多附魔
+//   events   yg_events    事件（全局事件 / 猎杀悬赏）
+//   bingo    yg_bingo     Bingo
+//   mobs     yg_mobs      更多生物（幻翼 × 苦力怕混合）
+//
+// 插件 id 必须是 `net.fabricmc.fabric-loom`（NoRemap 变体），不是 `fabric-loom`（完整版）。
+// 原因：26.2 是自定义 MC 版本，分发时已是「官方命名」形态，无 yarn/intermediary 映射。
+// 完整版 loom 强制要求 mappings 有依赖，且其 disableObfuscation 开关会连 remap 系配置
+// 一起跳过 —— 两头堵。NoRemap 变体不需要 mappings，依赖用普通 implementation 即可。
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
 }
 
 allprojects {
-	group = 'com.randomdrops'
+	group = 'com.yunxigames'
 }
 
-// 子项目共享、且不依赖 loom/java 插件扩展的约定。
-// 凡是需要 loom 扩展（minecraft()/loom{}）或 java 扩展（components.java/processResources/
-// jar/sourceSets）的配置，都写在各子项目自己的 build.gradle 里——因为 root 的 subprojects
-// 块在子项目 plugins{} 之前执行，那时 loom/java 尚未挂上，引用其扩展会报「Could not find method」。
+// 子项目共享、且不依赖 loom/java 插件扩展的约定（全部惰性注册，配置期安全）。
 subprojects {
 	version = rootProject.version
 
@@ -29,8 +33,27 @@ subprojects {
 		mavenCentral()
 	}
 
-	// JDK 24 字节码（工具链无关，仅控制 release；configureEach 是惰性注册，安全）。
+	// JDK 24 字节码（工具链无关，仅控制 release）
 	tasks.withType(JavaCompile).configureEach {
 		it.options.release = 24
+	}
+
+	// fabric.mod.json 的版本占位展开（ProcessResources 任务由 loom 挂 java 插件后才有，
+	// configureEach 惰性注册，届时生效）
+	tasks.withType(ProcessResources).configureEach {
+		def ver = project.version
+		inputs.property "version", ver
+		filesMatching("fabric.mod.json") {
+			expand "version": ver
+		}
+	}
+
+	// fat-jar：玩法包把 yg-core 的类打进自己的 jar，自包含、可独立安装。
+	// core 自己排在 include 首位，此处的 project(':core') 引用是安全的。
+	if (project.name != 'core') {
+		project.evaluationDependsOn(':core')
+		tasks.withType(Jar).configureEach {
+			from(project(':core').sourceSets.main.output)
+		}
 	}
 }

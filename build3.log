@@ -1,0 +1,107 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :drops
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :bingo
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :core:compileJava UP-TO-DATE
+> Task :bingo:processResources
+> Task :drops:processResources
+> Task :events:processResources
+> Task :mobs:processResources
+> Task :events:processIncludeJars UP-TO-DATE
+> Task :events:processTestResources NO-SOURCE
+> Task :events:validateAccessWidener NO-SOURCE
+> Task :enchants:processResources
+> Task :core:processResources
+> Task :core:classes
+> Task :mobs:compileJava UP-TO-DATE
+> Task :mobs:classes
+> Task :bingo:processIncludeJars
+> Task :bingo:processTestResources NO-SOURCE
+> Task :bingo:validateAccessWidener NO-SOURCE
+> Task :drops:compileJava UP-TO-DATE
+> Task :drops:classes
+> Task :bingo:compileJava UP-TO-DATE
+> Task :bingo:classes
+> Task :enchants:processIncludeJars
+> Task :events:compileJava UP-TO-DATE
+> Task :events:classes
+> Task :core:processIncludeJars
+> Task :mobs:processIncludeJars
+> Task :enchants:compileJava UP-TO-DATE
+> Task :enchants:classes
+> Task :drops:processIncludeJars
+> Task :events:compileTestJava NO-SOURCE
+> Task :events:testClasses UP-TO-DATE
+> Task :enchants:compileTestJava NO-SOURCE
+> Task :enchants:processTestResources NO-SOURCE
+> Task :enchants:testClasses UP-TO-DATE
+> Task :bingo:compileTestJava NO-SOURCE
+> Task :bingo:testClasses UP-TO-DATE
+> Task :enchants:validateAccessWidener NO-SOURCE
+> Task :enchants:jar
+> Task :enchants:assemble
+> Task :mobs:compileTestJava NO-SOURCE
+> Task :mobs:processTestResources NO-SOURCE
+> Task :mobs:testClasses UP-TO-DATE
+> Task :mobs:validateAccessWidener NO-SOURCE
+> Task :mobs:jar
+> Task :mobs:assemble
+> Task :events:jar
+> Task :events:assemble
+> Task :bingo:jar
+> Task :bingo:assemble
+> Task :drops:compileTestJava NO-SOURCE
+> Task :drops:processTestResources NO-SOURCE
+> Task :drops:testClasses UP-TO-DATE
+> Task :drops:validateAccessWidener NO-SOURCE
+> Task :drops:jar
+> Task :drops:assemble
+> Task :core:jar
+> Task :drops:test NO-SOURCE
+> Task :bingo:test NO-SOURCE
+> Task :enchants:test NO-SOURCE
+> Task :events:test NO-SOURCE
+> Task :mobs:test NO-SOURCE
+> Task :mobs:check UP-TO-DATE
+> Task :drops:check UP-TO-DATE
+> Task :events:check UP-TO-DATE
+> Task :bingo:check UP-TO-DATE
+> Task :bingo:build
+> Task :enchants:check UP-TO-DATE
+> Task :events:build
+> Task :enchants:build
+> Task :mobs:build
+> Task :drops:build
+> Task :core:sourcesJar
+> Task :core:assemble
+> Task :core:compileTestJava NO-SOURCE
+> Task :core:processTestResources NO-SOURCE
+> Task :core:testClasses UP-TO-DATE
+> Task :core:test NO-SOURCE
+> Task :core:validateAccessWidener NO-SOURCE
+> Task :core:check UP-TO-DATE
+> Task :core:build
+
+BUILD SUCCESSFUL in 13s
+25 actionable tasks: 18 executed, 7 up-to-date

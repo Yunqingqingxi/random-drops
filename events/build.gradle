@@ -1,15 +1,14 @@
 plugins {
 	id 'net.fabricmc.fabric-loom'
-	id 'maven-publish'
 }
 
 base {
-	archivesName = "randomdrops-events"
+	archivesName = "yg-events"
 }
 
 loom {
 	mods {
-		"randomdrops-events" {
+		"yg_events" {
 			sourceSet sourceSets.main
 		}
 	}
@@ -19,32 +18,8 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	// 事件模块依赖核心框架
+	// 依赖 yg-core 基础库（类会一起打进本包 jar）
 	implementation project(':core')
-}
-
-java {
-	withSourcesJar()
-}
-
-processResources {
-	def ver = project.version
-	inputs.property "version", ver
-	filesMatching("fabric.mod.json") {
-		expand "version": ver
-	}
-}
-
-jar {
-	from("LICENSE") {
-		rename { "${it}_${project.name}" }
-	}
-}
-
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
+	// 悬赏奖励 / 福到礼物的随机物品来自随机掉落引擎（运行时要求已安装 yg_drops）
+	implementation project(':drops')
 }

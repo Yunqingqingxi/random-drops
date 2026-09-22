@@ -1,23 +1,11 @@
+// yg-core：yunxigames 系列的基础库（配置框架 / 自检框架 / 战绩 / 播报 / 命令工具）。
+// core 不是独立 mod（无 fabric.mod.json），编译后的类会被打进每个玩法包的 jar 里
+// （见 root build.gradle 的 fat-jar 逻辑），所以每个玩法包都「自带 core」，可独立安装。
 plugins {
 	id 'net.fabricmc.fabric-loom'
-	id 'maven-publish'
-}
-
-base {
-	archivesName = "randomdrops-core"
-}
-
-loom {
-	mods {
-		"randomdrops" {
-			sourceSet sourceSets.main
-		}
-	}
 }
 
 dependencies {
-	// 26.2 是自定义 MC 版本，其 minecraft jar 分发时已是「官方命名」形态，
-	// 无需 yarn/intermediary 映射；NoRemap loom 用普通 implementation 挂依赖即可。
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
@@ -25,26 +13,4 @@ dependencies {
 
 java {
 	withSourcesJar()
-}
-
-processResources {
-	def ver = project.version
-	inputs.property "version", ver
-	filesMatching("fabric.mod.json") {
-		expand "version": ver
-	}
-}
-
-jar {
-	from("LICENSE") {
-		rename { "${it}_${project.name}" }
-	}
-}
-
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
 }

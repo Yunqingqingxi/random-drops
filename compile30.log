@@ -1,0 +1,969 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :bingo
+Fabric Loom: 1.17.21
+
+> Configure project :drops
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :drops:compileJava
+D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:8: 错误: 找不到符号
+import com.yunxigames.SelfTest;
+                     ^
+  符号:   类 SelfTest
+  位置: 程序包 com.yunxigames
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:29: 错误: 找不到符号
+public final class DropsConfig extends YgConfig {
+                                       ^
+  符号: 类 YgConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:839: 错误: 找不到符号
+	private transient IdFilter entityBlacklistFilter = IdFilter.EMPTY;
+	                  ^
+  符号:   类 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:840: 错误: 找不到符号
+	private transient IdFilter itemBlacklistFilter = IdFilter.EMPTY;
+	                  ^
+  符号:   类 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:841: 错误: 找不到符号
+	private transient IdFilter spawnerEggFilter = IdFilter.EMPTY;
+	                  ^
+  符号:   类 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:48: 错误: 找不到符号
+import static com.yunxigames.SelfTest.*;
+                            ^
+  符号:   类 SelfTest
+  位置: 程序包 com.yunxigames
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:83: 错误: 程序包SelfTest不存在
+	static void runAll(SelfTest.Context ctx) {
+	                           ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:103: 错误: 找不到符号
+	public static void tntIgnition(ServerLevel level, BlockPos pos, Entity owner, YgConfig config) {
+	                                                                              ^
+  符号:   类 YgConfig
+  位置: 类 Feedback
+D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:150: 错误: 找不到符号
+			FallInjury.Plan plan, YgConfig config) {
+			                      ^
+  符号:   类 YgConfig
+  位置: 类 Feedback
+D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:169: 错误: 找不到符号
+	public static void limbInjury(ServerPlayer player, int legs, int arms, int seconds, YgConfig config) {
+	                                                                                    ^
+  符号:   类 YgConfig
+  位置: 类 Feedback
+D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:64: 错误: 找不到符号
+		int failed = SelfTest.run(server, Math.max(1, DropsConfig.get().selfTestRolls));
+		             ^
+  符号:   变量 SelfTest
+  位置: 类 YunxiGamesCommand
+D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:64: 错误: 找不到符号
+		int failed = SelfTest.run(server, Math.max(1, DropsConfig.get().selfTestRolls));
+		                                                               ^
+  符号:   变量 selfTestRolls
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:444: 错误: 程序包Yg不存在
+				Yg.LOGGER.warn("[random-drops] 宝藏池里这些 id 不存在，已忽略：{}", missing);
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:448: 错误: 程序包Yg不存在
+				Yg.LOGGER.warn("[random-drops] 宝藏池是空的，暴击大爆暂时失效");
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:450: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] 暴击宝藏池已构建：{} 项", built.size());
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:501: 错误: 程序包Yg不存在
+				Yg.LOGGER.warn("[random-drops] 专属池里这些 id 不存在，已忽略：{}", missing);
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:541: 错误: 找不到符号
+		SessionStats.dropEvent();
+		^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:568: 错误: 找不到符号
+				SessionStats.jackpot();
+				^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:569: 错误: 找不到符号
+				SessionStats.itemsGiven(treasureCount);
+				^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:577: 错误: 找不到符号
+				if (config.debugLog) {
+				          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:578: 错误: 程序包Yg不存在
+					Yg.LOGGER.info("[random-drops] {} -> 暴击大爆 {} x{}",
+					  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:591: 错误: 找不到符号
+			SessionStats.itemsGiven(ultimate.getCount());
+			^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:595: 错误: 找不到符号
+			if (config.debugLog) {
+			          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:596: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] {} -> 终极物资 {} x{}",
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:610: 错误: 找不到符号
+			SessionStats.nothing();
+			^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:612: 错误: 找不到符号
+			if (config.debugLog) {
+			          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:613: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] {} -> 什么都没掉", formatPos(pos));
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:624: 错误: 找不到符号
+			SessionStats.mobRoll();
+			^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:671: 错误: 找不到符号
+					SessionStats.mobsSpawned(spawnedCount);
+					^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:673: 错误: 找不到符号
+					if (config.debugLog) {
+					          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:674: 错误: 程序包Yg不存在
+						Yg.LOGGER.info("[random-drops] {} -> 生成生物 {} x{} [{}]",
+						  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:700: 错误: 找不到符号
+			if (config.debugLog) {
+			          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:701: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] {} -> 池子里没有能掉的东西，跳过", formatPos(pos));
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:712: 错误: 找不到符号
+		if (config.debugLog) {
+		          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:713: 错误: 程序包Yg不存在
+			Yg.LOGGER.info("[random-drops] {} -> 掉落物品 {} x{}", formatPos(pos), idOf(item), count);
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:716: 错误: 找不到符号
+		SessionStats.itemsGiven(count);
+		^
+  符号:   变量 SessionStats
+  位置: 类 DropRandomizer
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1004: 错误: 程序包Yg不存在
+			Yg.LOGGER.info("[random-drops] 随机物品池已构建：{} 项，{}",
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1007: 错误: 找不到符号
+			if (config.debugLog) {
+			          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1008: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] 物品池自检：dirt={} stone={} diamond={} air={}",
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1044: 错误: 程序包Yg不存在
+			Yg.LOGGER.info("[random-drops] 随机生物池已构建：敌对 {} / 中立 {} / 友好 {}，{}",
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1047: 错误: 找不到符号
+			if (config.debugLog) {
+			          ^
+  符号:   变量 debugLog
+  位置: 类型为DropsConfig的变量 config
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1048: 错误: 程序包Yg不存在
+				Yg.LOGGER.info("[random-drops] 生物池样例：敌对={} 中立={} 友好={}",
+				  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:839: 错误: 找不到符号
+	private transient IdFilter entityBlacklistFilter = IdFilter.EMPTY;
+	                                                   ^
+  符号:   变量 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:840: 错误: 找不到符号
+	private transient IdFilter itemBlacklistFilter = IdFilter.EMPTY;
+	                                                 ^
+  符号:   变量 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:841: 错误: 找不到符号
+	private transient IdFilter spawnerEggFilter = IdFilter.EMPTY;
+	                                              ^
+  符号:   变量 IdFilter
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:927: 错误: 找不到符号
+		Path path = configPath(FILE_NAME);
+		            ^
+  符号:   方法 configPath(String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:950: 错误: 找不到符号
+		Path path = configPath(FILE_NAME);
+		            ^
+  符号:   方法 configPath(String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1040: 错误: 找不到符号
+		neutralIds = parseIds(neutralMobs, "neutralMobs");
+		             ^
+  符号:   方法 parseIds(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1041: 错误: 找不到符号
+		extraPassiveIds = parseIds(extraPassiveMobs, "extraPassiveMobs");
+		                  ^
+  符号:   方法 parseIds(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1042: 错误: 找不到符号
+		entityBlacklistFilter = parseFilter(entityBlacklist, "entityBlacklist");
+		                        ^
+  符号:   方法 parseFilter(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1043: 错误: 找不到符号
+		itemBlacklistFilter = parseFilter(itemBlacklist, "itemBlacklist");
+		                      ^
+  符号:   方法 parseFilter(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1046: 错误: 找不到符号
+		spawnerEggFilter = parseFilter(extraSpawnerEggItems, "extraSpawnerEggItems");
+		                   ^
+  符号:   方法 parseFilter(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1047: 错误: 找不到符号
+		netherExclusiveIds = parseIds(netherExclusiveItems, "netherExclusiveItems");
+		                     ^
+  符号:   方法 parseIds(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1048: 错误: 找不到符号
+		endExclusiveIds = parseIds(endExclusiveItems, "endExclusiveItems");
+		                  ^
+  符号:   方法 parseIds(List<String>,String)
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:60: 错误: 找不到符号
+		SelfTest.registerStep("随机掉落全项（①~⑮ + 植被 + 幸运加成）", DropsSelfTest::runAll);
+		^
+  符号:   变量 SelfTest
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:62: 错误: 找不到符号
+		SelfTest.onBeforeRun(() -> {
+		^
+  符号:   变量 SelfTest
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:75: 错误: 找不到符号
+		SelfTest.onAfterRun(() -> {
+		^
+  符号:   变量 SelfTest
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:148: 错误: 找不到符号
+		check("①-a 物品数量范围", configOk && observedOk,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:162: 错误: 找不到符号
+		long itemsBefore = SessionStats.itemsGiven();
+		                   ^
+  符号:   变量 SessionStats
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:175: 错误: 找不到符号
+		check("①-b 生物掉宝不出空手", emptyDelta == 0,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:185: 错误: 找不到符号
+			check("①-c 落地僵直", false, "无法在 " + pos.toShortString() + " 生成测试生物");
+			^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:205: 错误: 找不到符号
+		check("①-c 落地僵直", ticks == 40 && stunned && released,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:251: 错误: 找不到符号
+		check("② 暴击大爆", poolNotEmpty && fromPool == rolls && notFromPool == 0 && jackpotDelta == rolls,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:282: 错误: 程序包Yg不存在
+			Yg.LOGGER.error("[random-drops] 保底反馈在 cause=null 时抛异常", error);
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:285: 错误: 找不到符号
+		check("③ 保底可见化", triggerAt == threshold && feedbackSafe && config.showPityFeedback,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:310: 错误: 程序包Yg不存在
+			Yg.LOGGER.error("[random-drops] 稀有掉落广播抛异常", error);
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:315: 错误: 找不到符号
+		check("④ 稀有掉落广播", rareDetected && commonRejected && broadcastSafe,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:330: 错误: 找不到符号
+			report = SessionStats.report();
+			         ^
+  符号:   变量 SessionStats
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:340: 错误: 找不到符号
+		check("⑤ 末影龙通关结算", countOk && reportOk && flagOk,
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:380: 错误: 找不到符号
+						+ "当前档位 " + live + "（倍率 ×" + trim(liveMultiplier) + "）；无世界时 " + headless
+						                             ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:381: 错误: 找不到符号
+						+ " ×" + trim(headlessMultiplier) + "（应为 EARLY ×1）");
+						         ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:458: 错误: 找不到符号
+						+ "；下界×" + trim(config.netherJackpotMultiplier) + "=" + netherMultiplierOk
+						           ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:459: 错误: 找不到符号
+						+ "、末地×" + trim(config.endJackpotMultiplier) + "=" + endMultiplierOk
+						           ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:473: 错误: 找不到符号
+			check("⑧ 精英怪", false, "无法生成用于测试的僵尸");
+			^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:498: 错误: 找不到符号
+		check("⑧ 精英怪", rejectsNonPlayer && made && marked && glowing && named && healthier && persistent
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:609: 错误: 找不到符号
+				"爆怪概率 " + trim(config.mobChance) + "（已从 0.15 下调=" + mobChanceReduced
+				          ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:610: 错误: 找不到符号
+						+ "）；物品/生物/空手=" + trim(config.itemChance()) + "/" + trim(config.mobChance)
+						                  ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:610: 错误: 找不到符号
+						+ "）；物品/生物/空手=" + trim(config.itemChance()) + "/" + trim(config.mobChance)
+						                                                    ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:611: 错误: 找不到符号
+						+ "/" + trim(config.emptyChance) + " 合计 " + trim(ratio)
+						        ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:611: 错误: 找不到符号
+						+ "/" + trim(config.emptyChance) + " 合计 " + trim(ratio)
+						                                            ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:656: 错误: 找不到符号
+		check("⑩ 刷怪蛋禁用", config.blockSpawnerEggDrops && eggFound && instanceBanned && idBanned
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:711: 错误: 找不到符号
+				"甩出 " + count + " 枚（配置 " + wanted + " 个方向，半径 " + trim(config.tntIgniteSpreadBlocks)
+				                                                 ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:787: 错误: 找不到符号
+						+ "；半径 " + trim(config.dropMergeRadius) + " 格"
+						           ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:865: 错误: 找不到符号
+				detail = "移速 " + trim(baseSpeed) + " → 断一处 " + trim(lightSpeed)
+				                 ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:865: 错误: 找不到符号
+				detail = "移速 " + trim(baseSpeed) + " → 断一处 " + trim(lightSpeed)
+				                                               ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:866: 错误: 找不到符号
+						+ " → 断两处 " + trim(severeSpeed) + " → 解除后 "
+						              ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:867: 错误: 找不到符号
+						+ trim(carrier.getAttributeValue(Attributes.MOVEMENT_SPEED));
+						  ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:881: 错误: 找不到符号
+						+ "；跌落分档 " + trim(config.fallInjuryHeight) + " 格以下不触发=" + belowRejected
+						             ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:883: 错误: 找不到符号
+						+ trim(config.fallInjuryHeight) + "格→断" + light.legs() + "腿" + light.arms() + "手/"
+						  ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:884: 错误: 找不到符号
+						+ light.seconds() + "秒，" + trim(config.fallInjurySevereHeight) + "格→断"
+						                           ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:976: 错误: 找不到符号
+								+ " ×" + grant.getCount()) + "（概率 " + trim(config.ultimateChance)
+								                                      ^
+  符号:   方法 trim(double)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1022: 错误: 找不到符号
+		check("⑮ 特殊物品带真实数据（修空壳附魔书 bug）",
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1036: 错误: 找不到符号
+		check("㉙ 灭火不掉落·黑名单",
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1051: 错误: 找不到符号
+		check("㉝ 植被不掉落·花草/水草/枯叶堆",
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1059: 错误: 找不到符号
+		Holder<Enchantment> sharpness = vanillaEnchant(level, "minecraft:sharpness");
+		                                ^
+  符号:   方法 vanillaEnchant(ServerLevel,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1073: 错误: 找不到符号
+					vanillaEnchant(level, "minecraft:efficiency");
+					^
+  符号:   方法 vanillaEnchant(ServerLevel,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1090: 错误: 找不到符号
+		check("㉟ 幸运加成·附魔等级换暴击",
+		^
+  符号:   方法 check(String,boolean,String)
+  位置: 类 DropsSelfTest
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropTally.java:122: 错误: 找不到符号
+		if (DropsConfig.get().debugLog) {
+		                     ^
+  符号:   变量 debugLog
+  位置: 类 DropsConfig
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropTally.java:123: 错误: 程序包Yg不存在
+			Yg.LOGGER.info("[random-drops] 掉落统计播报：{} 种 {} 件", TALLY.size(), TOTAL.get());
+			  ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\EliteMobs.java:111: 错误: 找不到符号
+		SessionStats.elite();
+		^
+  符号:   变量 SessionStats
+  位置: 类 EliteMobs
+100 个错误
+
+> Task :drops:compileJava FAILED
+> Task :core:compileJava
+
+[Incubating] Problems report is available at: file:///D:/code/random-drops/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':drops:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:8: 错误: 找不到符号
+  import com.yunxigames.SelfTest;
+                       ^
+    符号:   类 SelfTest
+    位置: 程序包 com.yunxigames
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:839: 错误: 找不到符号
+  	private transient IdFilter entityBlacklistFilter = IdFilter.EMPTY;
+  	                  ^
+    符号:   类 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:840: 错误: 找不到符号
+  	private transient IdFilter itemBlacklistFilter = IdFilter.EMPTY;
+  	                  ^
+    符号:   类 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:841: 错误: 找不到符号
+  	private transient IdFilter spawnerEggFilter = IdFilter.EMPTY;
+  	                  ^
+    符号:   类 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:48: 错误: 找不到符号
+  import static com.yunxigames.SelfTest.*;
+                              ^
+    符号:   类 SelfTest
+    位置: 程序包 com.yunxigames
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:103: 错误: 找不到符号
+  	public static void tntIgnition(ServerLevel level, BlockPos pos, Entity owner, YgConfig config) {
+  	                                                                              ^
+    符号:   类 YgConfig
+    位置: 类 Feedback
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:150: 错误: 找不到符号
+  			FallInjury.Plan plan, YgConfig config) {
+  			                      ^
+    符号:   类 YgConfig
+    位置: 类 Feedback
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\Feedback.java:169: 错误: 找不到符号
+  	public static void limbInjury(ServerPlayer player, int legs, int arms, int seconds, YgConfig config) {
+  	                                                                                    ^
+    符号:   类 YgConfig
+    位置: 类 Feedback
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:64: 错误: 找不到符号
+  		int failed = SelfTest.run(server, Math.max(1, DropsConfig.get().selfTestRolls));
+  		             ^
+    符号:   变量 SelfTest
+    位置: 类 YunxiGamesCommand
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\command\YunxiGamesCommand.java:64: 错误: 找不到符号
+  		int failed = SelfTest.run(server, Math.max(1, DropsConfig.get().selfTestRolls));
+  		                                                               ^
+    符号:   变量 selfTestRolls
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:541: 错误: 找不到符号
+  		SessionStats.dropEvent();
+  		^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:568: 错误: 找不到符号
+  				SessionStats.jackpot();
+  				^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:569: 错误: 找不到符号
+  				SessionStats.itemsGiven(treasureCount);
+  				^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:577: 错误: 找不到符号
+  				if (config.debugLog) {
+  				          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:591: 错误: 找不到符号
+  			SessionStats.itemsGiven(ultimate.getCount());
+  			^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:595: 错误: 找不到符号
+  			if (config.debugLog) {
+  			          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:610: 错误: 找不到符号
+  			SessionStats.nothing();
+  			^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:612: 错误: 找不到符号
+  			if (config.debugLog) {
+  			          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:624: 错误: 找不到符号
+  			SessionStats.mobRoll();
+  			^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:671: 错误: 找不到符号
+  					SessionStats.mobsSpawned(spawnedCount);
+  					^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:673: 错误: 找不到符号
+  					if (config.debugLog) {
+  					          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:700: 错误: 找不到符号
+  			if (config.debugLog) {
+  			          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:712: 错误: 找不到符号
+  		if (config.debugLog) {
+  		          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:716: 错误: 找不到符号
+  		SessionStats.itemsGiven(count);
+  		^
+    符号:   变量 SessionStats
+    位置: 类 DropRandomizer
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1007: 错误: 找不到符号
+  			if (config.debugLog) {
+  			          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1047: 错误: 找不到符号
+  			if (config.debugLog) {
+  			          ^
+    符号:   变量 debugLog
+    位置: 类型为DropsConfig的变量 config
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:839: 错误: 找不到符号
+  	private transient IdFilter entityBlacklistFilter = IdFilter.EMPTY;
+  	                                                   ^
+    符号:   变量 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:840: 错误: 找不到符号
+  	private transient IdFilter itemBlacklistFilter = IdFilter.EMPTY;
+  	                                                 ^
+    符号:   变量 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:841: 错误: 找不到符号
+  	private transient IdFilter spawnerEggFilter = IdFilter.EMPTY;
+  	                                              ^
+    符号:   变量 IdFilter
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:60: 错误: 找不到符号
+  		SelfTest.registerStep("随机掉落全项（①~⑮ + 植被 + 幸运加成）", DropsSelfTest::runAll);
+  		^
+    符号:   变量 SelfTest
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:62: 错误: 找不到符号
+  		SelfTest.onBeforeRun(() -> {
+  		^
+    符号:   变量 SelfTest
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:75: 错误: 找不到符号
+  		SelfTest.onAfterRun(() -> {
+  		^
+    符号:   变量 SelfTest
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:162: 错误: 找不到符号
+  		long itemsBefore = SessionStats.itemsGiven();
+  		                   ^
+    符号:   变量 SessionStats
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:330: 错误: 找不到符号
+  			report = SessionStats.report();
+  			         ^
+    符号:   变量 SessionStats
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropTally.java:122: 错误: 找不到符号
+  		if (DropsConfig.get().debugLog) {
+  		                     ^
+    符号:   变量 debugLog
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\EliteMobs.java:111: 错误: 找不到符号
+  		SessionStats.elite();
+  		^
+    符号:   变量 SessionStats
+    位置: 类 EliteMobs
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:29: 错误: 找不到符号
+  public final class DropsConfig extends YgConfig {
+                                         ^
+    符号: 类 YgConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:927: 错误: 找不到符号
+  		Path path = configPath(FILE_NAME);
+  		            ^
+    符号:   方法 configPath(String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:950: 错误: 找不到符号
+  		Path path = configPath(FILE_NAME);
+  		            ^
+    符号:   方法 configPath(String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1040: 错误: 找不到符号
+  		neutralIds = parseIds(neutralMobs, "neutralMobs");
+  		             ^
+    符号:   方法 parseIds(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1041: 错误: 找不到符号
+  		extraPassiveIds = parseIds(extraPassiveMobs, "extraPassiveMobs");
+  		                  ^
+    符号:   方法 parseIds(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1042: 错误: 找不到符号
+  		entityBlacklistFilter = parseFilter(entityBlacklist, "entityBlacklist");
+  		                        ^
+    符号:   方法 parseFilter(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1043: 错误: 找不到符号
+  		itemBlacklistFilter = parseFilter(itemBlacklist, "itemBlacklist");
+  		                      ^
+    符号:   方法 parseFilter(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1046: 错误: 找不到符号
+  		spawnerEggFilter = parseFilter(extraSpawnerEggItems, "extraSpawnerEggItems");
+  		                   ^
+    符号:   方法 parseFilter(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1047: 错误: 找不到符号
+  		netherExclusiveIds = parseIds(netherExclusiveItems, "netherExclusiveItems");
+  		                     ^
+    符号:   方法 parseIds(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsConfig.java:1048: 错误: 找不到符号
+  		endExclusiveIds = parseIds(endExclusiveItems, "endExclusiveItems");
+  		                  ^
+    符号:   方法 parseIds(List<String>,String)
+    位置: 类 DropsConfig
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:148: 错误: 找不到符号
+  		check("①-a 物品数量范围", configOk && observedOk,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:175: 错误: 找不到符号
+  		check("①-b 生物掉宝不出空手", emptyDelta == 0,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:185: 错误: 找不到符号
+  			check("①-c 落地僵直", false, "无法在 " + pos.toShortString() + " 生成测试生物");
+  			^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:205: 错误: 找不到符号
+  		check("①-c 落地僵直", ticks == 40 && stunned && released,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:251: 错误: 找不到符号
+  		check("② 暴击大爆", poolNotEmpty && fromPool == rolls && notFromPool == 0 && jackpotDelta == rolls,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:285: 错误: 找不到符号
+  		check("③ 保底可见化", triggerAt == threshold && feedbackSafe && config.showPityFeedback,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:315: 错误: 找不到符号
+  		check("④ 稀有掉落广播", rareDetected && commonRejected && broadcastSafe,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:340: 错误: 找不到符号
+  		check("⑤ 末影龙通关结算", countOk && reportOk && flagOk,
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:380: 错误: 找不到符号
+  						+ "当前档位 " + live + "（倍率 ×" + trim(liveMultiplier) + "）；无世界时 " + headless
+  						                             ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:381: 错误: 找不到符号
+  						+ " ×" + trim(headlessMultiplier) + "（应为 EARLY ×1）");
+  						         ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:458: 错误: 找不到符号
+  						+ "；下界×" + trim(config.netherJackpotMultiplier) + "=" + netherMultiplierOk
+  						           ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:459: 错误: 找不到符号
+  						+ "、末地×" + trim(config.endJackpotMultiplier) + "=" + endMultiplierOk
+  						           ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:473: 错误: 找不到符号
+  			check("⑧ 精英怪", false, "无法生成用于测试的僵尸");
+  			^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:498: 错误: 找不到符号
+  		check("⑧ 精英怪", rejectsNonPlayer && made && marked && glowing && named && healthier && persistent
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:609: 错误: 找不到符号
+  				"爆怪概率 " + trim(config.mobChance) + "（已从 0.15 下调=" + mobChanceReduced
+  				          ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:610: 错误: 找不到符号
+  						+ "）；物品/生物/空手=" + trim(config.itemChance()) + "/" + trim(config.mobChance)
+  						                  ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:610: 错误: 找不到符号
+  						+ "）；物品/生物/空手=" + trim(config.itemChance()) + "/" + trim(config.mobChance)
+  						                                                    ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:611: 错误: 找不到符号
+  						+ "/" + trim(config.emptyChance) + " 合计 " + trim(ratio)
+  						        ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:611: 错误: 找不到符号
+  						+ "/" + trim(config.emptyChance) + " 合计 " + trim(ratio)
+  						                                            ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:656: 错误: 找不到符号
+  		check("⑩ 刷怪蛋禁用", config.blockSpawnerEggDrops && eggFound && instanceBanned && idBanned
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:711: 错误: 找不到符号
+  				"甩出 " + count + " 枚（配置 " + wanted + " 个方向，半径 " + trim(config.tntIgniteSpreadBlocks)
+  				                                                 ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:787: 错误: 找不到符号
+  						+ "；半径 " + trim(config.dropMergeRadius) + " 格"
+  						           ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:865: 错误: 找不到符号
+  				detail = "移速 " + trim(baseSpeed) + " → 断一处 " + trim(lightSpeed)
+  				                 ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:865: 错误: 找不到符号
+  				detail = "移速 " + trim(baseSpeed) + " → 断一处 " + trim(lightSpeed)
+  				                                               ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:866: 错误: 找不到符号
+  						+ " → 断两处 " + trim(severeSpeed) + " → 解除后 "
+  						              ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:867: 错误: 找不到符号
+  						+ trim(carrier.getAttributeValue(Attributes.MOVEMENT_SPEED));
+  						  ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:881: 错误: 找不到符号
+  						+ "；跌落分档 " + trim(config.fallInjuryHeight) + " 格以下不触发=" + belowRejected
+  						             ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:883: 错误: 找不到符号
+  						+ trim(config.fallInjuryHeight) + "格→断" + light.legs() + "腿" + light.arms() + "手/"
+  						  ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:884: 错误: 找不到符号
+  						+ light.seconds() + "秒，" + trim(config.fallInjurySevereHeight) + "格→断"
+  						                           ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:976: 错误: 找不到符号
+  								+ " ×" + grant.getCount()) + "（概率 " + trim(config.ultimateChance)
+  								                                      ^
+    符号:   方法 trim(double)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1022: 错误: 找不到符号
+  		check("⑮ 特殊物品带真实数据（修空壳附魔书 bug）",
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1036: 错误: 找不到符号
+  		check("㉙ 灭火不掉落·黑名单",
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1051: 错误: 找不到符号
+  		check("㉝ 植被不掉落·花草/水草/枯叶堆",
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1059: 错误: 找不到符号
+  		Holder<Enchantment> sharpness = vanillaEnchant(level, "minecraft:sharpness");
+  		                                ^
+    符号:   方法 vanillaEnchant(ServerLevel,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1073: 错误: 找不到符号
+  					vanillaEnchant(level, "minecraft:efficiency");
+  					^
+    符号:   方法 vanillaEnchant(ServerLevel,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1090: 错误: 找不到符号
+  		check("㉟ 幸运加成·附魔等级换暴击",
+  		^
+    符号:   方法 check(String,boolean,String)
+    位置: 类 DropsSelfTest
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:83: 错误: 程序包SelfTest不存在
+  	static void runAll(SelfTest.Context ctx) {
+  	                           ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:444: 错误: 程序包Yg不存在
+  				Yg.LOGGER.warn("[random-drops] 宝藏池里这些 id 不存在，已忽略：{}", missing);
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:448: 错误: 程序包Yg不存在
+  				Yg.LOGGER.warn("[random-drops] 宝藏池是空的，暴击大爆暂时失效");
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:450: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] 暴击宝藏池已构建：{} 项", built.size());
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:501: 错误: 程序包Yg不存在
+  				Yg.LOGGER.warn("[random-drops] 专属池里这些 id 不存在，已忽略：{}", missing);
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:578: 错误: 程序包Yg不存在
+  					Yg.LOGGER.info("[random-drops] {} -> 暴击大爆 {} x{}",
+  					  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:596: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] {} -> 终极物资 {} x{}",
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:613: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] {} -> 什么都没掉", formatPos(pos));
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:674: 错误: 程序包Yg不存在
+  						Yg.LOGGER.info("[random-drops] {} -> 生成生物 {} x{} [{}]",
+  						  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:701: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] {} -> 池子里没有能掉的东西，跳过", formatPos(pos));
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:713: 错误: 程序包Yg不存在
+  			Yg.LOGGER.info("[random-drops] {} -> 掉落物品 {} x{}", formatPos(pos), idOf(item), count);
+  			  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1004: 错误: 程序包Yg不存在
+  			Yg.LOGGER.info("[random-drops] 随机物品池已构建：{} 项，{}",
+  			  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1008: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] 物品池自检：dirt={} stone={} diamond={} air={}",
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1044: 错误: 程序包Yg不存在
+  			Yg.LOGGER.info("[random-drops] 随机生物池已构建：敌对 {} / 中立 {} / 友好 {}，{}",
+  			  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropRandomizer.java:1048: 错误: 程序包Yg不存在
+  				Yg.LOGGER.info("[random-drops] 生物池样例：敌对={} 中立={} 友好={}",
+  				  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:282: 错误: 程序包Yg不存在
+  			Yg.LOGGER.error("[random-drops] 保底反馈在 cause=null 时抛异常", error);
+  			  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:310: 错误: 程序包Yg不存在
+  			Yg.LOGGER.error("[random-drops] 稀有掉落广播抛异常", error);
+  			  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropTally.java:123: 错误: 程序包Yg不存在
+  			Yg.LOGGER.info("[random-drops] 掉落统计播报：{} 种 {} 件", TALLY.size(), TOTAL.get());
+  			  ^
+  100 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 19s
+2 actionable tasks: 2 executed

@@ -1,15 +1,14 @@
 plugins {
 	id 'net.fabricmc.fabric-loom'
-	id 'maven-publish'
 }
 
 base {
-	archivesName = "randomdrops-mobs"
+	archivesName = "yg-mobs"
 }
 
 loom {
 	mods {
-		"randomdrops-mobs" {
+		"yg_mobs" {
 			sourceSet sourceSets.main
 		}
 	}
@@ -19,32 +18,6 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	// 生物改变模块依赖核心框架
+	// 依赖 yg-core 基础库（类会一起打进本包 jar）
 	implementation project(':core')
-}
-
-java {
-	withSourcesJar()
-}
-
-processResources {
-	def ver = project.version
-	inputs.property "version", ver
-	filesMatching("fabric.mod.json") {
-		expand "version": ver
-	}
-}
-
-jar {
-	from("LICENSE") {
-		rename { "${it}_${project.name}" }
-	}
-}
-
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
 }

@@ -3,12 +3,12 @@ plugins {
 }
 
 base {
-	archivesName = "yg-enchants"
+	archivesName = "yg-bingo"
 }
 
 loom {
 	mods {
-		"yg_enchants" {
+		"yg_bingo" {
 			sourceSet sourceSets.main
 		}
 	}

@@ -1,0 +1,336 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :bingo
+Fabric Loom: 1.17.21
+Previous process has disowned the lock due to abrupt termination.
+Found existing cache lock file (ACQUIRED_PREVIOUS_OWNER_DISOWNED), rebuilding loom cache. This may have been caused by a failed or canceled build.
+
+> Configure project :drops
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :drops:compileJava
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:82: 错误: 非法的类型开始
+import static com.yunxigames.SelfTest.*;
+^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:82: 错误: 需要<标识符>
+import static com.yunxigames.SelfTest.*;
+                                      ^
+D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1129: 错误: 进行语法分析时已到达文件结尾
+}
+ ^
+3 个错误
+
+> Task :drops:compileJava FAILED
+
+> Task :core:compileJava
+D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:99: 错误: 已在程序包 com.yunxigames中定义了类 SelfTest
+public final class SelfTest {
+             ^
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:150: 错误: 程序包FallInjury不存在
+			FallInjury.Plan plan, YgConfig config) {
+			          ^
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:199: 错误: 程序包FallInjury不存在
+	private static String describe(FallInjury.Plan plan) {
+	                                         ^
+D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:72: 错误: 找不到符号
+		final java.util.function.Consumer<Context> action;
+		                                  ^
+  符号:   类 Context
+  位置: 类 Step
+D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:74: 错误: 找不到符号
+		Step(String name, java.util.function.Consumer<Context> action) {
+		                                              ^
+  符号:   类 Context
+  位置: 类 Step
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:27: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:29: 错误: 找不到符号
+		if (config.jackpotParticles) {
+		          ^
+  符号:   变量 jackpotParticles
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:36: 错误: 找不到符号
+		if (config.jackpotSound) {
+		          ^
+  符号:   变量 jackpotSound
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:41: 错误: 找不到符号
+		if (config.jackpotBroadcast) {
+		          ^
+  符号:   变量 jackpotBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:56: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:57: 错误: 找不到符号
+		if (!config.showPityFeedback) {
+		           ^
+  符号:   变量 showPityFeedback
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:73: 错误: 找不到符号
+ 		YgConfig config = YgConfig.get();
+ 		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:74: 错误: 找不到符号
+		if (!config.rareDropBroadcast) {
+		           ^
+  符号:   变量 rareDropBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:89: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:91: 错误: 找不到符号
+		if (!config.spawnerEggBroadcast || level == null) {
+		           ^
+  符号:   变量 spawnerEggBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:112: 错误: 找不到符号
+		if (!config.tntIgniteBroadcast) {
+		           ^
+  符号:   变量 tntIgniteBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:125: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:133: 错误: 找不到符号
+					"§a徒手挖满 " + config.bareHandLogThreshold + " 个原木 —— 补给 §f"
+					                  ^
+  符号:   变量 bareHandLogThreshold
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:137: 错误: 找不到符号
+		if (!config.bareHandLogBroadcast) {
+		           ^
+  符号:   变量 bareHandLogBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:144: 错误: 找不到符号
+				"§a[随机掉落] §e" + who + " §a徒手挖满了 " + config.bareHandLogThreshold + " 个原木，补给 §f"
+				                                          ^
+  符号:   变量 bareHandLogThreshold
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:157: 错误: 找不到符号
+		if (!config.limbInjuryBroadcast || level == null) {
+		           ^
+  符号:   变量 limbInjuryBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:171: 错误: 程序包FallInjury不存在
+				"§c" + describe(new FallInjury.Plan(legs, arms, seconds)) + " §7· §c"
+				                              ^
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:177: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:187: 错误: 找不到符号
+		if (!config.ultimateBroadcast) {
+		           ^
+  符号:   变量 ultimateBroadcast
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:200: 错误: 找不到符号
+		YgConfig config = YgConfig.get();
+		                          ^
+  符号:   方法 get()
+  位置: 类 YgConfig
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:201: 错误: 找不到符号
+		String one = (int) Math.round(config.limbOnePenalty * 100) + "%";
+		                                    ^
+  符号:   变量 limbOnePenalty
+  位置: 类型为YgConfig的变量 config
+D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:202: 错误: 找不到符号
+		String two = (int) Math.round(config.limbTwoPenalty * 100) + "%";
+		                                    ^
+  符号:   变量 limbTwoPenalty
+  位置: 类型为YgConfig的变量 config
+27 个错误
+
+> Task :core:compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/code/random-drops/build/reports/problems/problems-report.html
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':drops:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:1129: 错误: 进行语法分析时已到达文件结尾
+  }
+   ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:82: 错误: 非法的类型开始
+  import static com.yunxigames.SelfTest.*;
+  ^
+  D:\code\random-drops\drops\src\main\java\com\yunxigames\DropsSelfTest.java:82: 错误: 需要<标识符>
+  import static com.yunxigames.SelfTest.*;
+                                        ^
+  3 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':core:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:72: 错误: 找不到符号
+  		final java.util.function.Consumer<Context> action;
+  		                                  ^
+    符号:   类 Context
+    位置: 类 Step
+  D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:74: 错误: 找不到符号
+  		Step(String name, java.util.function.Consumer<Context> action) {
+  		                                              ^
+    符号:   类 Context
+    位置: 类 Step
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:29: 错误: 找不到符号
+  		if (config.jackpotParticles) {
+  		          ^
+    符号:   变量 jackpotParticles
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:36: 错误: 找不到符号
+  		if (config.jackpotSound) {
+  		          ^
+    符号:   变量 jackpotSound
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:41: 错误: 找不到符号
+  		if (config.jackpotBroadcast) {
+  		          ^
+    符号:   变量 jackpotBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:57: 错误: 找不到符号
+  		if (!config.showPityFeedback) {
+  		           ^
+    符号:   变量 showPityFeedback
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:74: 错误: 找不到符号
+  		if (!config.rareDropBroadcast) {
+  		           ^
+    符号:   变量 rareDropBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:91: 错误: 找不到符号
+  		if (!config.spawnerEggBroadcast || level == null) {
+  		           ^
+    符号:   变量 spawnerEggBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:112: 错误: 找不到符号
+  		if (!config.tntIgniteBroadcast) {
+  		           ^
+    符号:   变量 tntIgniteBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:133: 错误: 找不到符号
+  					"§a徒手挖满 " + config.bareHandLogThreshold + " 个原木 —— 补给 §f"
+  					                  ^
+    符号:   变量 bareHandLogThreshold
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:137: 错误: 找不到符号
+  		if (!config.bareHandLogBroadcast) {
+  		           ^
+    符号:   变量 bareHandLogBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:144: 错误: 找不到符号
+  				"§a[随机掉落] §e" + who + " §a徒手挖满了 " + config.bareHandLogThreshold + " 个原木，补给 §f"
+  				                                          ^
+    符号:   变量 bareHandLogThreshold
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:157: 错误: 找不到符号
+  		if (!config.limbInjuryBroadcast || level == null) {
+  		           ^
+    符号:   变量 limbInjuryBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:187: 错误: 找不到符号
+  		if (!config.ultimateBroadcast) {
+  		           ^
+    符号:   变量 ultimateBroadcast
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:201: 错误: 找不到符号
+  		String one = (int) Math.round(config.limbOnePenalty * 100) + "%";
+  		                                    ^
+    符号:   变量 limbOnePenalty
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:202: 错误: 找不到符号
+  		String two = (int) Math.round(config.limbTwoPenalty * 100) + "%";
+  		                                    ^
+    符号:   变量 limbTwoPenalty
+    位置: 类型为YgConfig的变量 config
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:27: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:56: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:73: 错误: 找不到符号
+   		YgConfig config = YgConfig.get();
+   		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:89: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:125: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:177: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:200: 错误: 找不到符号
+  		YgConfig config = YgConfig.get();
+  		                          ^
+    符号:   方法 get()
+    位置: 类 YgConfig
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:150: 错误: 程序包FallInjury不存在
+  			FallInjury.Plan plan, YgConfig config) {
+  			          ^
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:199: 错误: 程序包FallInjury不存在
+  	private static String describe(FallInjury.Plan plan) {
+  	                                         ^
+  D:\code\random-drops\core\src\main\java\com\yunxigames\Feedback.java:171: 错误: 程序包FallInjury不存在
+  				"§c" + describe(new FallInjury.Plan(legs, arms, seconds)) + " §7· §c"
+  				                              ^
+  D:\code\random-drops\core\src\main\java\com\yunxigames\SelfTest.java:99: 错误: 已在程序包 com.yunxigames中定义了类 SelfTest
+  public final class SelfTest {
+               ^
+  27 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+BUILD FAILED in 29s
+2 actionable tasks: 2 executed

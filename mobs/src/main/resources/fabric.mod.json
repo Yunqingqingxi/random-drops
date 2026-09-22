@@ -1,27 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "randomdrops-mobs",
+	"id": "yg_mobs",
 	"version": "${version}",
-	"name": "Random Drops: Mobs",
-	"description": "生物改变模块：在幻翼基础上结合苦力怕，保留幻翼飞行 / 俯冲能力的同时获得苦力怕的爆炸能力，并将幻翼音效替换为自定义音频。可独立嵌入其它项目。",
+	"name": "yunxigames 更多生物",
+	"description": "幻翼 × 苦力怕混合生物：保留幻翼飞行俯冲，获得苦力怕爆炸，音效替换为自定义音频。",
 	"authors": [
-		"random-drops"
+		"Yunqingqingxi"
 	],
 	"license": "MIT",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.randomdrops.RandomDropsMobs"
+			"com.yunxigames.YunxiGamesMobs"
 		]
 	},
 	"mixins": [
-		"randomdrops-mobs.mixins.json"
+		"yg-mobs.mixins.json"
 	],
 	"depends": {
 		"fabricloader": "~0.19.5",
 		"minecraft": "~26.2",
 		"java": ">=25",
-		"fabric-api": "*",
-		"randomdrops": ">=1.15.0"
+		"fabric-api": "*"
 	}
 }

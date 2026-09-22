@@ -3,12 +3,12 @@ plugins {
 }
 
 base {
-	archivesName = "yg-enchants"
+	archivesName = "yg-drops"
 }
 
 loom {
 	mods {
-		"yg_enchants" {
+		"yg_drops" {
 			sourceSet sourceSets.main
 		}
 	}
@@ -20,6 +20,4 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	// 依赖 yg-core 基础库（类会一起打进本包 jar）
 	implementation project(':core')
-	// Bingo / 附魔的物品池与引擎 API 来自随机掉落包（运行时要求已安装 yg_drops）
-	implementation project(':drops')
 }

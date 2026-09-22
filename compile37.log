@@ -1,0 +1,34 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :core
+Fabric Loom: 1.17.21
+
+> Configure project :drops
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :bingo
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+Failed to parse fabric.mod.json: D:\code\random-drops\drops\src\main\resources\fabric.mod.json
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :core:compileJava UP-TO-DATE
+> Task :mobs:compileJava UP-TO-DATE
+> Task :drops:compileJava UP-TO-DATE
+> Task :events:compileJava UP-TO-DATE
+> Task :enchants:compileJava UP-TO-DATE
+> Task :bingo:compileJava
+
+BUILD SUCCESSFUL in 15s
+6 actionable tasks: 1 executed, 5 up-to-date

@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "yg_events",
+	"id": "yg_bingo",
 	"version": "${version}",
-	"name": "yunxigames 事件",
-	"description": "全局事件系统：青蛙雨/天降陨石/雷池/血月/福到，常驻 Boss 条 HUD，以及猎杀悬赏支线任务。",
+	"name": "yunxigames Bingo",
+	"description": "物品与击杀双板集卡：发地图、集目标、连线条目给奖励。",
 	"authors": [
 		"Yunqingqingxi"
 	],
@@ -11,7 +11,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.yunxigames.YunxiGamesEvents"
+			"com.yunxigames.YunxiGamesBingo"
 		]
 	},
 "depends": {
