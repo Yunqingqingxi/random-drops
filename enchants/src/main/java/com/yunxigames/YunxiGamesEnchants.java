@@ -40,8 +40,6 @@ public class YunxiGamesEnchants implements ModInitializer {
 		SelfTest.register(() -> EnchantsConfig.get().selfTestRolls);
 		SelfTest.registerStep("⑫ 附魔突破·注册+核心定义",
 				ctx -> EnchantSelfTest.checkModEnchantments(ctx.level, EnchantsConfig.get()));
-		SelfTest.registerStep("⑬ 碎裂·按概率附着",
-				ctx -> EnchantSelfTest.checkShatterApply(ctx.level, EnchantsConfig.get()));
 		SelfTest.registerStep("⑱ 雷霆万钧·雷击生成",
 				ctx -> EnchantSelfTest.checkThunderLightning(ctx.level, EnchantsConfig.get()));
 		SelfTest.registerStep("㉒ 贪婪·注册+额外掉落",

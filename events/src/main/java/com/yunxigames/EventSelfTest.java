@@ -88,9 +88,12 @@ static void checkGlobalEvents(MinecraftServer server, ServerLevel level, EventsC
 			GlobalEvents.updateHudForTest(server, config, server.getTickCount());
 			nameOk = hud.getName().getString().contains("青蛙雨");
 
-			BlockPos origin = new BlockPos(0, 90, 0);
+			// 用真实地表当原点：写死 y=90 的空中点既没加载区块、青蛙落地也没着落；
+			// getHeightmapPos 会强制把该区块加载出来，getEntities 才数得到实体。
+			BlockPos origin = level.getHeightmapPos(
+					net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, new BlockPos(0, 64, 0));
 			int before = countFrogs(level, origin, 40.0D);
-			GlobalEvents.spawnFrogAt(level, origin.getX() + 0.5, origin.getY() + 10.0, origin.getZ() + 0.5);
+			GlobalEvents.spawnFrogAt(level, origin.getX() + 0.5, origin.getY() + 3.0, origin.getZ() + 0.5);
 			int after = countFrogs(level, origin, 40.0D);
 			frogOk = after > before;
 

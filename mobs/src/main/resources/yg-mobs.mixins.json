@@ -3,8 +3,7 @@
 	"package": "com.yunxigames.mobs.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"PhantomCreeperMixin",
-		"PhantomCreeperSoundMixin"
+		"PhantomCreeperMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -3,7 +3,7 @@
 	"id": "yg_mobs",
 	"version": "${version}",
 	"name": "yunxigames 更多生物",
-	"description": "幻翼 × 苦力怕混合生物：保留幻翼飞行俯冲，获得苦力怕爆炸，音效替换为自定义音频。",
+	"description": "把原版幻翼改写成\"苦力怕幻翼\"：贴图换成苦力怕绿皮（覆盖原版 phantom 贴图，所有幻翼都变样），俯冲命中时爆炸并播放自定义音频。",
 	"authors": [
 		"Yunqingqingxi"
 	],

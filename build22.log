@@ -1,0 +1,104 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :bingo
+Fabric Loom: 1.17.21
+
+> Configure project :drops
+Fabric Loom: 1.17.21
+
+> Configure project :enchants
+Fabric Loom: 1.17.21
+
+> Configure project :events
+Fabric Loom: 1.17.21
+
+> Configure project :mobs
+Fabric Loom: 1.17.21
+
+> Task :mobs:compileJava
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:32: 错误: 找不到符号
+	private static final Identifier SOUND_ID = Identifier.parse("yg_mobs:phantom_creeper");
+	                     ^
+  符号:   类 Identifier
+  位置: 类 PhantomCreeperMixin
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:33: 错误: 找不到符号
+	private static SoundEvent customSound;
+	               ^
+  符号:   类 SoundEvent
+  位置: 类 PhantomCreeperMixin
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:36: 错误: 找不到符号
+	private static SoundEvent customSound() {
+	               ^
+  符号:   类 SoundEvent
+  位置: 类 PhantomCreeperMixin
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:32: 错误: 找不到符号
+	private static final Identifier SOUND_ID = Identifier.parse("yg_mobs:phantom_creeper");
+	                                           ^
+  符号:   变量 Identifier
+  位置: 类 PhantomCreeperMixin
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:38: 错误: 程序包BuiltInRegistries不存在
+			customSound = BuiltInRegistries.SOUND_EVENT.get(SOUND_ID)
+			                               ^
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:65: 错误: 找不到符号
+			SoundEvent se = customSound();
+			^
+  符号:   类 SoundEvent
+  位置: 类 PhantomCreeperMixin
+D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:68: 错误: 找不到符号
+						se, SoundSource.HOSTILE, 1.5F, 1.0F);
+						    ^
+  符号:   变量 SoundSource
+  位置: 类 PhantomCreeperMixin
+7 个错误
+
+> Task :mobs:compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/code/random-drops/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':mobs:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:32: 错误: 找不到符号
+  	private static final Identifier SOUND_ID = Identifier.parse("yg_mobs:phantom_creeper");
+  	                     ^
+    符号:   类 Identifier
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:33: 错误: 找不到符号
+  	private static SoundEvent customSound;
+  	               ^
+    符号:   类 SoundEvent
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:36: 错误: 找不到符号
+  	private static SoundEvent customSound() {
+  	               ^
+    符号:   类 SoundEvent
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:32: 错误: 找不到符号
+  	private static final Identifier SOUND_ID = Identifier.parse("yg_mobs:phantom_creeper");
+  	                                           ^
+    符号:   变量 Identifier
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:65: 错误: 找不到符号
+  			SoundEvent se = customSound();
+  			^
+    符号:   类 SoundEvent
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:68: 错误: 找不到符号
+  						se, SoundSource.HOSTILE, 1.5F, 1.0F);
+  						    ^
+    符号:   变量 SoundSource
+    位置: 类 PhantomCreeperMixin
+  D:\code\random-drops\mobs\src\main\java\com\yunxigames\mobs\mixin\PhantomCreeperMixin.java:38: 错误: 程序包BuiltInRegistries不存在
+  			customSound = BuiltInRegistries.SOUND_EVENT.get(SOUND_ID)
+  			                               ^
+  7 个错误
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 11s
+1 actionable task: 1 executed

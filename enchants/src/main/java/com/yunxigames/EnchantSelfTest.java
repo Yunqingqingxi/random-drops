@@ -67,6 +67,14 @@ static void checkStinkyFeet(MinecraftServer server, ServerLevel level, EnchantsC
 		BlockPos base = level.getHeightmapPos(
 				net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, new BlockPos(5, 64, 5));
 
+		// 铺一小块石台：若落点是水面/沙滩，亡灵生成会找不到可站立的地面而失败，
+		// 那是测试环境问题而非功能问题（顺带把区块强制加载出来）。
+		for (int px = -2; px <= 2; px++) {
+			for (int pz = -2; pz <= 2; pz++) {
+				level.setBlock(base.offset(px, 0, pz), Blocks.STONE.defaultBlockState(), 2);
+			}
+		}
+
 		level.setBlock(base.above(), Blocks.DANDELION.defaultBlockState(), 2);
 		level.setBlock(base.above().east(), Blocks.POPPY.defaultBlockState(), 2);
 		level.setBlock(base.above().east(2), Blocks.TALL_GRASS.defaultBlockState(), 2);
@@ -223,7 +231,11 @@ static void checkNewEnchantments(ServerLevel level, EnchantsConfig config) {
 		boolean zombieOk = false;
 		int dreadHits = -1;
 		boolean dreadSlowness = false;
-		ArmorStand dreadStand = spawnArmorStand(level, new BlockPos(5, 80, 5));
+		// 与 ⑲ 同一处地表（该区段已被 ⑲ 强制加载）：无玩家时 getEntities 对
+		// 从未加载的区段会返回空，写死 (5,80,5) 在新区块上必然数不到实体。
+		BlockPos dreadBase = level.getHeightmapPos(
+				net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, new BlockPos(5, 64, 5));
+		ArmorStand dreadStand = spawnArmorStand(level, dreadBase);
 		EntityType<?> huskType = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse("minecraft:husk"));
 		if (dreadStand != null && huskType != null) {
 			@SuppressWarnings("unchecked")
@@ -231,7 +243,7 @@ static void checkNewEnchantments(ServerLevel level, EnchantsConfig config) {
 			Mob zombie = husk.create(level, EntitySpawnReason.EVENT);
 			if (zombie != null) {
 				try {
-					zombie.setPos(6.5, 81.0, 6.5); // 固定在威压半径（6×2=12 格）内
+					zombie.setPos(dreadBase.getX() + 1.5, dreadBase.getY() + 1.0, dreadBase.getZ() + 1.5); // 威压半径（6×2=12 格）内
 					zombieOk = level.addFreshEntity(zombie);
 					dreadHits = zombieOk ? EnchantmentEffects.dreadTick(level, dreadStand, 2, config) : -1;
 					dreadSlowness = zombie.hasEffect(MobEffects.SLOWNESS);
@@ -391,53 +403,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 		EnchantmentHelper.setEnchantments(stack, m.toImmutable());
 	}
 
-	/** ⑰：碎裂按配置概率附着在随机掉落的武器/工具上（chance=1 全中，chance=0 全不中），非武器/工具不受影响。 */
-	public static void checkShatterApply(ServerLevel level, EnchantsConfig config) {
-		double savedChance = config.shatterApplyChance;
-		boolean savedEnabled = config.enableEnchantmentBreakthrough;
-		config.enableEnchantmentBreakthrough = true;
-
-		boolean allShatter;
-		boolean noneShatter;
-		boolean appleClean;
-		try {
-			config.shatterApplyChance = 1.0D;
-			int total = 60;
-			int withShatter = 0;
-			for (int i = 0; i < total; i++) {
-				ItemStack s = LootSupply.makeRealSpecial(Items.DIAMOND_SWORD, 1, level, level.getRandom());
-				if (ModEnchantments.hasEnchantment(s, ModEnchantments.shatter(level))) {
-					withShatter++;
-				}
-			}
-			allShatter = withShatter == total;
-
-			config.shatterApplyChance = 0.0D;
-			int none = 0;
-			for (int i = 0; i < 30; i++) {
-				ItemStack s = LootSupply.makeRealSpecial(Items.IRON_PICKAXE, 1, level, level.getRandom());
-				if (!ModEnchantments.hasEnchantment(s, ModEnchantments.shatter(level))) {
-					none++;
-				}
-			}
-			noneShatter = none == 30;
-
-			config.shatterApplyChance = 1.0D;
-			ItemStack apple = LootSupply.makeRealSpecial(Items.APPLE, 1, level, level.getRandom());
-			appleClean = !ModEnchantments.hasEnchantment(apple, ModEnchantments.shatter(level));
-		} finally {
-			config.enableEnchantmentBreakthrough = savedEnabled;
-			config.shatterApplyChance = savedChance;
-		}
-
-		check("⑰ 碎裂 10% 附着随机武器/工具",
-				allShatter && noneShatter && appleClean,
-				"chance=1 时 " + (allShatter ? "全部" : "未全部") + "带碎裂；chance=0 时 "
-						+ (noneShatter ? "全不带" : "仍带") + "；苹果(非武器)" + (appleClean ? "干净" : "被污染"));
-	}
-
-	/** ⑱：雷霆万钧的雷击能在世界中生成真实闪电实体。 */
-	public static void checkThunderLightning(ServerLevel level, EnchantsConfig config) {
+		public static void checkThunderLightning(ServerLevel level, EnchantsConfig config) {
 		EntityType<?> lbType = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse("minecraft:lightning_bolt"));
 		boolean typeOk = lbType instanceof EntityType;
 		boolean added = false;

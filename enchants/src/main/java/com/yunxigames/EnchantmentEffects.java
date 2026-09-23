@@ -311,10 +311,14 @@ public final class EnchantmentEffects {
 			return;
 		}
 
-		BlockPos p = pos.offset(
-				(int) (level.getRandom().nextDouble() * 6.0D - 3.0D), 2,
-				(int) (level.getRandom().nextDouble() * 6.0D - 3.0D));
-		type.spawn(level, p, net.minecraft.world.entity.EntitySpawnReason.EVENT);
+		// 在附近「地表上方一格」生成：直接写 y+2 会让实体悬空，
+		// 原版生成规则（EntityType#spawn）拒绝空中落地，等于这次效果白给。
+		int dx = (int) (level.getRandom().nextDouble() * 6.0D - 3.0D);
+		int dz = (int) (level.getRandom().nextDouble() * 6.0D - 3.0D);
+		BlockPos surface = level.getHeightmapPos(
+				net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
+				pos.offset(dx, 0, dz));
+		type.spawn(level, surface, net.minecraft.world.entity.EntitySpawnReason.EVENT);
 	}
 
 	// ------------------------------------------------------------ 磁石

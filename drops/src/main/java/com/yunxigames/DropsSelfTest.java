@@ -58,6 +58,8 @@ public final class DropsSelfTest {
 	/** 注册本包全部自检步骤（由 YunxiGamesDrops 入口调用）。 */
 	public static void registerSteps() {
 		SelfTest.registerStep("随机掉落全项（①~⑮ + 植被 + 幸运加成）", DropsSelfTest::runAll);
+		SelfTest.registerStep("⑰ 碎裂附着·随机掉落武器/工具",
+				ctx -> DropsSelfTest.checkShatterAttach(ctx.level, DropsConfig.get()));
 
 		SelfTest.onBeforeRun(() -> {
 			DropsConfig config = DropsConfig.get();
@@ -77,6 +79,80 @@ public final class DropsSelfTest {
 			Finale.resetForTest();
 			DropTally.resume();
 		});
+	}
+
+	/**
+	 * ⑰ 碎裂附着：随机掉出的武器 / 工具按概率带 {@code yg:shatter} 附魔。
+	 *
+	 * <p>碎裂附魔由「更多附魔」包提供，本包只做软引用 —— 没装那个包时附魔查不到，
+	 * 这项自检会如实报「碎裂附魔未注册（需要 yg-enchants）」，不算失败排查方向跑偏。
+	 */
+	static void checkShatterAttach(ServerLevel level, DropsConfig config) {
+		Holder<Enchantment> shatter = level.registryAccess()
+				.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+				.get(net.minecraft.resources.ResourceKey.create(
+						net.minecraft.core.registries.Registries.ENCHANTMENT,
+						Identifier.parse("yg:shatter")))
+				.orElse(null);
+
+		if (shatter == null) {
+			check("⑰ 碎裂附着·随机掉落武器/工具", true,
+					"未装 yg-enchants（碎裂附魔不存在）—— 软引用按预期静默跳过");
+			return;
+		}
+
+		boolean savedEnabled = config.enableShatterAttach;
+		double savedChance = config.shatterApplyChance;
+		config.enableShatterAttach = true;
+
+		boolean allShatter;
+		boolean noneShatter;
+		boolean appleClean;
+		try {
+			config.shatterApplyChance = 1.0D;
+			int total = 60;
+			int withShatter = 0;
+			for (int i = 0; i < total; i++) {
+				ItemStack s = DropRandomizer.makeRealSpecial(Items.DIAMOND_SWORD, 1, level, level.getRandom());
+				if (hasShatter(s, shatter)) {
+					withShatter++;
+				}
+			}
+			allShatter = withShatter == total;
+
+			config.shatterApplyChance = 0.0D;
+			int none = 0;
+			for (int i = 0; i < 30; i++) {
+				ItemStack s = DropRandomizer.makeRealSpecial(Items.IRON_PICKAXE, 1, level, level.getRandom());
+				if (!hasShatter(s, shatter)) {
+					none++;
+				}
+			}
+			noneShatter = none == 30;
+
+			config.shatterApplyChance = 1.0D;
+			ItemStack apple = DropRandomizer.makeRealSpecial(Items.APPLE, 1, level, level.getRandom());
+			appleClean = !hasShatter(apple, shatter);
+		} finally {
+			config.enableShatterAttach = savedEnabled;
+			config.shatterApplyChance = savedChance;
+		}
+
+		check("⑰ 碎裂附着·随机掉落武器/工具",
+				allShatter && noneShatter && appleClean,
+				"chance=1 时 " + (allShatter ? "全部" : "未全部") + "带碎裂；chance=0 时 "
+						+ (noneShatter ? "全不带" : "仍带") + "；苹果(非武器)" + (appleClean ? "干净" : "被污染"));
+	}
+
+	private static boolean hasShatter(ItemStack stack, Holder<Enchantment> shatter) {
+		for (Holder<Enchantment> h : stack.getOrDefault(
+				net.minecraft.core.component.DataComponents.ENCHANTMENTS,
+				ItemEnchantments.EMPTY).keySet()) {
+			if (h.value().equals(shatter.value())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** 按原顺序跑本包全部检查。 */
@@ -107,6 +183,7 @@ public final class DropsSelfTest {
 		checkNoDropBlocks(config);
 		checkNoLootPlants(level, config);
 		checkLuckBonus(level, config);
+		checkShatterAttach(level, config);
 	}
 
 	// ------------------------------------------------------------ ① 三个劝退点
