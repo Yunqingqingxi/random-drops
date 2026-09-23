@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.dread" },
+  "description": { "translate": "enchantment.yg.dread" },
   "supported_items": "#minecraft:enchantable/head_armor",
   "weight": 6,
   "max_level": 3,

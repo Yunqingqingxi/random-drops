@@ -1,4 +1,4 @@
-package com.yunxigames.mixin;
+package com.yunxigames.drops.mixin;
 
 import com.yunxigames.FallInjury;
 import net.minecraft.world.damagesource.DamageSource;

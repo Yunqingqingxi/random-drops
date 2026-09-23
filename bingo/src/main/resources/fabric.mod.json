@@ -14,11 +14,10 @@
 			"com.yunxigames.YunxiGamesBingo"
 		]
 	},
-"depends": {
+	"depends": {
 		"fabricloader": "~0.19.5",
 		"minecraft": "~26.2",
 		"java": ">=25",
-		"fabric-api": "*",
-		"yg_drops": "*"
+		"fabric-api": "*"
 	}
 }

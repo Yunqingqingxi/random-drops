@@ -188,10 +188,10 @@ public final class SelfTest {
 	public static void check(String name, boolean ok, String detail) {
 		if (ok) {
 			passed++;
-			Yg.LOGGER.info("[random-drops] 自检 ✅ {} —— {}", name, detail);
+			Yg.LOGGER.info("[yg] 自检 ✅ {} —— {}", name, detail);
 		} else {
 			failed++;
-			Yg.LOGGER.error("[random-drops] 自检 ❌ {} —— {}", name, detail);
+			Yg.LOGGER.error("[yg] 自检 ❌ {} —— {}", name, detail);
 		}
 	}
 

@@ -114,7 +114,7 @@ public final class EliteMobs {
 		broadcast(level, mob, cause, config);
 
 		if (config.debugLog) {
-			Yg.LOGGER.info("[random-drops] 精英怪出现：{} @ {}", mob.getName().getString(),
+			Yg.LOGGER.info("[yg] 精英怪出现：{} @ {}", mob.getName().getString(),
 					mob.blockPosition().toShortString());
 		}
 

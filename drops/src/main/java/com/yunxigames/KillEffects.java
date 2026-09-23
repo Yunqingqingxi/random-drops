@@ -245,11 +245,11 @@ public final class KillEffects {
 			List<Entry> harmful = parseAll(k.harmfulIds(), true, config, missing);
 
 			if (!missing.isEmpty()) {
-				Yg.LOGGER.warn("[random-drops] 击杀效果池里这些条目被忽略：{}", missing);
+				Yg.LOGGER.warn("[yg] 击杀效果池里这些条目被忽略：{}", missing);
 			}
 
 			if (beneficial.isEmpty() && harmful.isEmpty()) {
-				Yg.LOGGER.warn("[random-drops] 击杀效果的两个池子都是空的，击杀奖励暂时失效");
+				Yg.LOGGER.warn("[yg] 击杀效果的两个池子都是空的，击杀奖励暂时失效");
 			}
 
 			return new Pools(List.copyOf(beneficial), List.copyOf(harmful));

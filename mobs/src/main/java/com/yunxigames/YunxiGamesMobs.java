@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 生物改变模块入口（randomdrops-mobs）。
+ * 生物改变模块入口（yg_mobs 包）。
  *
  * <p>负责把自定义音效 {@code yg_mobs:phantom_creeper}（res/bz.mp3 转码出的 ogg）
  * 注册进声音注册表；并把「幻翼 × 苦力怕混合生物」相关的自检步骤挂进统一自检流程。

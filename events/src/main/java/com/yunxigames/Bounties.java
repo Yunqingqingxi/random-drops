@@ -125,7 +125,7 @@ public final class Bounties {
 						+ "§d！完成者获得宝藏奖励！"), false);
 
 		if (config.debugLog) {
-			Yg.LOGGER.info("[random-drops] 悬赏发布：{} x{}", target.name(), requiredKills);
+			Yg.LOGGER.info("[yg-events] 悬赏发布：{} x{}", target.name(), requiredKills);
 		}
 	}
 
@@ -162,7 +162,7 @@ public final class Bounties {
 		ServerLevel level = killer.level();
 		int rewardCount = Math.max(0, config.bountyRewardCount);
 		for (int i = 0; i < rewardCount; i++) {
-			ItemStack reward = DropRandomizer.randomTreasure(level, level.getRandom());
+			ItemStack reward = LootSupply.randomTreasure(level, level.getRandom());
 			if (!reward.isEmpty()) {
 				Block.popResource(level, killer.blockPosition(), reward);
 			}
@@ -183,7 +183,7 @@ public final class Bounties {
 		progress = 0;
 
 		if (config.debugLog) {
-			Yg.LOGGER.info("[random-drops] 悬赏达成，冷却 {} 分钟", cooldownMinutes);
+			Yg.LOGGER.info("[yg-events] 悬赏达成，冷却 {} 分钟", cooldownMinutes);
 		}
 	}
 

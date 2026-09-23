@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.greed" },
+  "description": { "translate": "enchantment.yg.greed" },
   "supported_items": "#minecraft:enchantable/mining",
   "weight": 6,
   "max_level": 3,

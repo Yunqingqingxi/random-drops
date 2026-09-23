@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * 附魔突破模块入口：雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重诅咒 / 易碎诅咒 / 汲取 / 疾风 / 威压，
  * 以及击杀升级、图书管理员重做。
  *
- * <p>本模块依赖 {@code randomdrops}（core）核心框架，自身通过 {@link SelfTest#registerStep} 把
+ * <p>本模块依赖 {@code yg-core} 基础库，自身通过 {@link SelfTest#registerStep} 把
  * 属于附魔的若干自检步骤挂进统一的自检流程，避免 core 反向依赖本模块。
  */
 public class YunxiGamesEnchants implements ModInitializer {
@@ -34,27 +34,6 @@ public class YunxiGamesEnchants implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			EnchantmentEffects.reset();
 			EnchantmentLevelUps.reset();
-		});
-
-		// 碎裂附魔按概率附着到随机掉落的武器 / 工具上（随机掉落包的装饰钩子；
-		// 没装随机掉落包时这个钩子永远不会被调用，附魔包单独照常工作）
-		DropDecorators.register((stack, item, level, random) -> {
-			EnchantsConfig config = EnchantsConfig.get();
-			if (!config.enableEnchantmentBreakthrough || random.nextDouble() >= config.shatterApplyChance) {
-				return;
-			}
-			if (!ModEnchantments.isWeaponOrTool(item)) {
-				return;
-			}
-
-			Holder<Enchantment> shatter = ModEnchantments.shatter(level);
-			if (shatter == null) {
-				return;
-			}
-
-			ItemEnchantments.Mutable ench = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-			ench.set(shatter, 1);
-			EnchantmentHelper.setEnchantments(stack, ench.toImmutable());
 		});
 
 		// 把附魔相关的自检步骤挂进统一自检流程

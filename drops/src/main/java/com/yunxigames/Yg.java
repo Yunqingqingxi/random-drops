@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
  * 没有 {@code ModInitializer} 入口 —— 入口在各玩法包自己的 {@code YunxiGames<包名>} 里。
  */
 public final class Yg {
-	public static final String MOD_ID = "yg";
+	public static final String MOD_ID = "yg_drops";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	private Yg() {

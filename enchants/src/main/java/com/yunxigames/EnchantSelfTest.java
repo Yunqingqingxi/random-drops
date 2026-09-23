@@ -62,29 +62,44 @@ public final class EnchantSelfTest {
 	}
 
 static void checkStinkyFeet(MinecraftServer server, ServerLevel level, EnchantsConfig config) {
-		BlockPos base = new BlockPos(5, 80, 5);
-		level.setBlock(base.offset(0, 1, 0), Blocks.DANDELION.defaultBlockState(), 2);
-		level.setBlock(base.offset(1, 1, 0), Blocks.POPPY.defaultBlockState(), 2);
-		level.setBlock(base.offset(2, 1, 0), Blocks.TALL_GRASS.defaultBlockState(), 2);
-		level.setBlock(base.offset(0, 0, 0), Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+		// 基准点取真实地表：写死 y=80 在空中时，亡灵找不到落脚点会生成失败，
+		// 于是这项在不同世界里时好时坏（不是功能问题，是测试环境没搭对）。
+		BlockPos base = level.getHeightmapPos(
+				net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, new BlockPos(5, 64, 5));
+
+		level.setBlock(base.above(), Blocks.DANDELION.defaultBlockState(), 2);
+		level.setBlock(base.above().east(), Blocks.POPPY.defaultBlockState(), 2);
+		level.setBlock(base.above().east(2), Blocks.TALL_GRASS.defaultBlockState(), 2);
+		level.setBlock(base, Blocks.GRASS_BLOCK.defaultBlockState(), 2);
 
 		EnchantmentEffects.witherPlants(level, base, config.stinkyRadius);
 
-		boolean flowerGone = level.getBlockState(base.offset(0, 1, 0)).isAir()
-				&& level.getBlockState(base.offset(1, 1, 0)).isAir();
-		boolean grassGone = level.getBlockState(base.offset(2, 1, 0)).isAir();
-		boolean dirt = level.getBlockState(base.offset(0, 0, 0)).getBlock() == Blocks.DIRT;
+		boolean flowerGone = level.getBlockState(base.above()).isAir()
+				&& level.getBlockState(base.above().east()).isAir();
+		boolean grassGone = level.getBlockState(base.above().east(2)).isAir();
+		boolean dirt = level.getBlockState(base).getBlock() == Blocks.DIRT;
 
-		int before = countUndead(level, base, config.stinkyRadius + 4.0D);
-		EnchantmentEffects.spawnUndeadNear(level, base);
-		int after = countUndead(level, base, config.stinkyRadius + 4.0D);
+		// 临时拉满生成概率：自检只调用一次，按默认概率抽可能抽不到，会误判成功能失效
+		double savedChance = config.stinkyUndeadSpawnChance;
+		config.stinkyUndeadSpawnChance = 1.0D;
+
+		int before;
+		int after;
+		try {
+			before = countUndead(level, base, config.stinkyRadius + 4.0D);
+			EnchantmentEffects.spawnUndeadNear(level, base);
+			after = countUndead(level, base, config.stinkyRadius + 4.0D);
+		} finally {
+			config.stinkyUndeadSpawnChance = savedChance;
+		}
+
 		boolean undeadSpawned = after > before;
 
 		// 清理
-		level.setBlock(base.offset(0, 1, 0), Blocks.AIR.defaultBlockState(), 2);
-		level.setBlock(base.offset(1, 1, 0), Blocks.AIR.defaultBlockState(), 2);
-		level.setBlock(base.offset(2, 1, 0), Blocks.AIR.defaultBlockState(), 2);
-		level.setBlock(base.offset(0, 0, 0), Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(base.above(), Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(base.above().east(), Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(base.above().east(2), Blocks.AIR.defaultBlockState(), 2);
+		level.setBlock(base, Blocks.AIR.defaultBlockState(), 2);
 
 		check("⑲ 臭脚·花草枯萎+亡灵生成",
 				flowerGone && grassGone && dirt && undeadSpawned,
@@ -390,7 +405,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 			int total = 60;
 			int withShatter = 0;
 			for (int i = 0; i < total; i++) {
-				ItemStack s = DropRandomizer.makeRealSpecial(Items.DIAMOND_SWORD, 1, level, level.getRandom());
+				ItemStack s = LootSupply.makeRealSpecial(Items.DIAMOND_SWORD, 1, level, level.getRandom());
 				if (ModEnchantments.hasEnchantment(s, ModEnchantments.shatter(level))) {
 					withShatter++;
 				}
@@ -400,7 +415,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 			config.shatterApplyChance = 0.0D;
 			int none = 0;
 			for (int i = 0; i < 30; i++) {
-				ItemStack s = DropRandomizer.makeRealSpecial(Items.IRON_PICKAXE, 1, level, level.getRandom());
+				ItemStack s = LootSupply.makeRealSpecial(Items.IRON_PICKAXE, 1, level, level.getRandom());
 				if (!ModEnchantments.hasEnchantment(s, ModEnchantments.shatter(level))) {
 					none++;
 				}
@@ -408,7 +423,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 			noneShatter = none == 30;
 
 			config.shatterApplyChance = 1.0D;
-			ItemStack apple = DropRandomizer.makeRealSpecial(Items.APPLE, 1, level, level.getRandom());
+			ItemStack apple = LootSupply.makeRealSpecial(Items.APPLE, 1, level, level.getRandom());
 			appleClean = !ModEnchantments.hasEnchantment(apple, ModEnchantments.shatter(level));
 		} finally {
 			config.enableEnchantmentBreakthrough = savedEnabled;
@@ -448,7 +463,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 		BlockPos pos = new BlockPos(0, 90, 0);
 		int nonEmpty = 0;
 		for (int i = 0; i < 20; i++) {
-			if (!DropRandomizer.randomLootOne(level, pos, level.getRandom()).isEmpty()) {
+			if (!LootSupply.randomItem(level, pos, level.getRandom()).isEmpty()) {
 				nonEmpty++;
 			}
 		}

@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.leech" },
+  "description": { "translate": "enchantment.yg.leech" },
   "supported_items": "#minecraft:enchantable/sharp_weapon",
   "weight": 6,
   "max_level": 3,

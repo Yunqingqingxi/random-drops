@@ -901,6 +901,15 @@ public final class DropsConfig extends YgConfig {
 		return enableTieredDrops && id != null && endExclusiveIds.contains(id);
 	}
 
+	/**
+	 * 随机掉出的武器 / 工具是否按概率附带「碎裂」附魔（需要另外安装 yg-enchants 包，
+	 * 附魔 id {@code yg:shatter} 存在时才生效；没装就自然跳过 —— 包与包零依赖）。
+	 */
+	public boolean enableShatterAttach = true;
+
+	/** 附着碎裂的概率。 */
+	public double shatterApplyChance = 0.06D;
+
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-drops.json");
 	private static volatile DropsConfig instance;
@@ -960,6 +969,9 @@ public final class DropsConfig extends YgConfig {
 
 	/** 修正越界 / 缺失的值，并解析各个 id 列表。 */
 	private void validate() {
+		if (!(shatterApplyChance >= 0.0D)) shatterApplyChance = 0.0D;
+		if (shatterApplyChance > 1.0D) shatterApplyChance = 1.0D;
+
 		if (itemBlacklist == null) itemBlacklist = new ArrayList<>();
 		if (neutralMobs == null) neutralMobs = new ArrayList<>();
 		if (extraPassiveMobs == null) extraPassiveMobs = new ArrayList<>();

@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.stinky_feet" },
+  "description": { "translate": "enchantment.yg.stinky_feet" },
   "supported_items": [
     "minecraft:leather_boots",
     "minecraft:chainmail_boots",

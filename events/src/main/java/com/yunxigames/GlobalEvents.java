@@ -141,7 +141,7 @@ public final class GlobalEvents {
 				nextEventTick = now + interval;
 			} else if (now - nextEventTick > interval) {
 				if (config.debugLog) {
-					Yg.LOGGER.info("[random-drops] 事件计时对齐：now={} 与预期差距超过一个周期，本轮跳过", now);
+					Yg.LOGGER.info("[yg-events] 事件计时对齐：now={} 与预期差距超过一个周期，本轮跳过", now);
 				}
 				nextEventTick = now + interval;
 			} else {
@@ -166,7 +166,7 @@ public final class GlobalEvents {
 		// 允许无事件 —— 掷骰全过程可观测（debugLog），「为什么轮空」从此有据可查
 		double roll = RANDOM.nextDouble();
 		if (config.debugLog) {
-			Yg.LOGGER.info("[random-drops] 事件掷骰：掷出 {} / 需 < {}（玩家 {} 人）→ {}",
+			Yg.LOGGER.info("[yg-events] 事件掷骰：掷出 {} / 需 < {}（玩家 {} 人）→ {}",
 					String.format("%.3f", roll), config.eventChance,
 					server.getPlayerList().getPlayerCount(),
 					roll < config.eventChance ? "触发" : "轮空");
@@ -330,7 +330,7 @@ public final class GlobalEvents {
 		}
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			ServerLevel lvl = p.level();
-			ItemStack gift = DropRandomizer.randomLootOne(lvl, p.blockPosition(), lvl.getRandom());
+			ItemStack gift = LootSupply.randomItem(lvl, p.blockPosition(), lvl.getRandom());
 			if (!gift.isEmpty()) {
 				BlockPos pos = p.blockPosition().offset(
 						lvl.getRandom().nextInt(7) - 3, 8, lvl.getRandom().nextInt(7) - 3);

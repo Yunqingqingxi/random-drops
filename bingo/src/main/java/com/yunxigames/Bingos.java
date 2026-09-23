@@ -130,7 +130,7 @@ public final class Bingos {
 
 	private static void startItemBoard(MinecraftServer server, BingoConfig config) {
 		ServerLevel level = server.overworld();
-		List<String> pool = DropRandomizer.samplePoolForBingo(level, BOARD * BOARD, RANDOM);
+		List<String> pool = LootSupply.samplePool(level, BOARD * BOARD, RANDOM);
 		if (pool.size() < BOARD * BOARD) {
 			return; // 池子异常（极端黑名单），下个 tick 再试
 		}
@@ -284,7 +284,7 @@ public final class Bingos {
 	private static void dropRewards(ServerPlayer trigger, int count) {
 		ServerLevel level = trigger.level();
 		for (int i = 0; i < count; i++) {
-			ItemStack reward = DropRandomizer.randomTreasure(level, level.getRandom());
+			ItemStack reward = LootSupply.randomTreasure(level, level.getRandom());
 			if (!reward.isEmpty()) {
 				Block.popResource(level, trigger.blockPosition(), reward);
 			}

@@ -1,4 +1,4 @@
-package com.yunxigames.mixin;
+package com.yunxigames.drops.mixin;
 
 import com.yunxigames.DropMerger;
 import com.yunxigames.DropsConfig;

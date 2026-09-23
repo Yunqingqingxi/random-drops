@@ -48,12 +48,4 @@ subprojects {
 		}
 	}
 
-	// fat-jar：玩法包把 yg-core 的类打进自己的 jar，自包含、可独立安装。
-	// core 自己排在 include 首位，此处的 project(':core') 引用是安全的。
-	if (project.name != 'core') {
-		project.evaluationDependsOn(':core')
-		tasks.withType(Jar).configureEach {
-			from(project(':core').sourceSets.main.output)
-		}
-	}
 }

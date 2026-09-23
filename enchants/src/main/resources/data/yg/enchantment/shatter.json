@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.shatter" },
+  "description": { "translate": "enchantment.yg.shatter" },
   "supported_items": [
     "minecraft:wooden_sword", "minecraft:stone_sword", "minecraft:iron_sword", "minecraft:golden_sword", "minecraft:diamond_sword", "minecraft:netherite_sword",
     "minecraft:wooden_pickaxe", "minecraft:stone_pickaxe", "minecraft:iron_pickaxe", "minecraft:golden_pickaxe", "minecraft:diamond_pickaxe", "minecraft:netherite_pickaxe",

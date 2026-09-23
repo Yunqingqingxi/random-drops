@@ -441,13 +441,13 @@ public final class DropRandomizer {
 			}
 
 			if (!missing.isEmpty()) {
-				Yg.LOGGER.warn("[random-drops] 宝藏池里这些 id 不存在，已忽略：{}", missing);
+				Yg.LOGGER.warn("[yg] 宝藏池里这些 id 不存在，已忽略：{}", missing);
 			}
 
 			if (built.isEmpty()) {
-				Yg.LOGGER.warn("[random-drops] 宝藏池是空的，暴击大爆暂时失效");
+				Yg.LOGGER.warn("[yg] 宝藏池是空的，暴击大爆暂时失效");
 			} else {
-				Yg.LOGGER.info("[random-drops] 暴击宝藏池已构建：{} 项", built.size());
+				Yg.LOGGER.info("[yg] 暴击宝藏池已构建：{} 项", built.size());
 			}
 
 			jackpotPool = List.copyOf(built);
@@ -498,7 +498,7 @@ public final class DropRandomizer {
 			}
 
 			if (!missing.isEmpty()) {
-				Yg.LOGGER.warn("[random-drops] 专属池里这些 id 不存在，已忽略：{}", missing);
+				Yg.LOGGER.warn("[yg] 专属池里这些 id 不存在，已忽略：{}", missing);
 			}
 
 			return List.copyOf(built);
@@ -575,7 +575,7 @@ public final class DropRandomizer {
 				}
 
 				if (config.debugLog) {
-					Yg.LOGGER.info("[random-drops] {} -> 暴击大爆 {} x{}",
+					Yg.LOGGER.info("[yg] {} -> 暴击大爆 {} x{}",
 							formatPos(pos), idOf(treasureItem), treasureCount);
 				}
 
@@ -593,7 +593,7 @@ public final class DropRandomizer {
 			Feedback.ultimate(level, pos, ultimate, cause);
 
 			if (config.debugLog) {
-				Yg.LOGGER.info("[random-drops] {} -> 终极物资 {} x{}",
+				Yg.LOGGER.info("[yg] {} -> 终极物资 {} x{}",
 						formatPos(pos), idOf(ultimate.getItem()), ultimate.getCount());
 			}
 
@@ -610,7 +610,7 @@ public final class DropRandomizer {
 			SessionStats.nothing();
 
 			if (config.debugLog) {
-				Yg.LOGGER.info("[random-drops] {} -> 什么都没掉", formatPos(pos));
+				Yg.LOGGER.info("[yg] {} -> 什么都没掉", formatPos(pos));
 			}
 
 			return List.of();
@@ -671,7 +671,7 @@ public final class DropRandomizer {
 					SessionStats.mobsSpawned(spawnedCount);
 
 					if (config.debugLog) {
-						Yg.LOGGER.info("[random-drops] {} -> 生成生物 {} x{} [{}]",
+						Yg.LOGGER.info("[yg] {} -> 生成生物 {} x{} [{}]",
 								formatPos(pos), idOf(type), spawnedCount, groupOf(type, config).label);
 					}
 					return List.of();
@@ -698,7 +698,7 @@ public final class DropRandomizer {
 		if (item == null) {
 			// 极端配置（整个池子都是被排除的物品）才会走到这里：宁可什么都不掉，也不放行
 			if (config.debugLog) {
-				Yg.LOGGER.info("[random-drops] {} -> 池子里没有能掉的东西，跳过", formatPos(pos));
+				Yg.LOGGER.info("[yg] {} -> 池子里没有能掉的东西，跳过", formatPos(pos));
 			}
 
 			return List.of();
@@ -710,7 +710,7 @@ public final class DropRandomizer {
 				Math.max(1, probe.getMaxStackSize()));
 
 		if (config.debugLog) {
-			Yg.LOGGER.info("[random-drops] {} -> 掉落物品 {} x{}", formatPos(pos), idOf(item), count);
+			Yg.LOGGER.info("[yg] {} -> 掉落物品 {} x{}", formatPos(pos), idOf(item), count);
 		}
 
 		SessionStats.itemsGiven(count);
@@ -877,9 +877,42 @@ public final class DropRandomizer {
 			stack = new ItemStack(item, count);
 		}
 
-		// 掉落物品装饰钩子：更多附魔包在这里给武器 / 工具附着碎裂等（core 不依赖玩法包）
-		DropDecorators.apply(stack, item, level, random);
+		// 武器 / 工具按概率附带「碎裂」附魔（软引用：没装 yg-enchants 时该附魔不存在，自然跳过）
+		tryAttachShatter(stack, item, level, random);
 		return stack;
+	}
+
+	/**
+	 * 给随机掉出的武器 / 工具按概率附着「碎裂」附魔。
+	 *
+	 * <p>碎裂附魔由「更多附魔」包注册（{@code yg:shatter}）。本包不依赖它：直接查附魔注册表，
+	 * 查不到就什么都不做 —— 只装随机掉落时这条路径永远静默跳过，装了两包才有联动。
+	 */
+	private static void tryAttachShatter(ItemStack stack, Item item, ServerLevel level, RandomSource random) {
+		DropsConfig config = DropsConfig.get();
+		if (!config.enableShatterAttach || random.nextDouble() >= config.shatterApplyChance) {
+			return;
+		}
+
+		// 26.2 用组件判定武器 / 工具（原版剑镐斧锹锄都有 TOOL，武器另有 WEAPON）；
+		// 走组件而不是 instanceof 具体类，模组添加的工具同样能被识别。
+		if (!stack.has(DataComponents.TOOL) && !stack.has(DataComponents.WEAPON)) {
+			return;
+		}
+
+		Holder<Enchantment> shatter = level.registryAccess()
+				.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+				.get(net.minecraft.resources.ResourceKey.create(
+						net.minecraft.core.registries.Registries.ENCHANTMENT,
+						Identifier.parse("yg:shatter")))
+				.orElse(null);
+		if (shatter == null) {
+			return;
+		}
+
+		ItemEnchantments.Mutable ench = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+		ench.set(shatter, 1);
+		net.minecraft.world.item.enchantment.EnchantmentHelper.setEnchantments(stack, ench.toImmutable());
 	}
 
 	/** 自检用：直接造一个带真实数据的特殊物品，验证不会掉出空壳。 */
@@ -1001,11 +1034,11 @@ public final class DropRandomizer {
 			}
 
 			itemPool = List.copyOf(built);
-			Yg.LOGGER.info("[random-drops] 随机物品池已构建：{} 项，{}",
+			Yg.LOGGER.info("[yg] 随机物品池已构建：{} 项，{}",
 					itemPool.size(), itemNamespaceSummary(itemPool));
 
 			if (config.debugLog) {
-				Yg.LOGGER.info("[random-drops] 物品池自检：dirt={} stone={} diamond={} air={}",
+				Yg.LOGGER.info("[yg] 物品池自检：dirt={} stone={} diamond={} air={}",
 						itemPool.contains(Items.DIRT), itemPool.contains(Items.STONE),
 						itemPool.contains(Items.DIAMOND), itemPool.contains(Items.AIR));
 			}
@@ -1041,11 +1074,11 @@ public final class DropRandomizer {
 			}
 
 			mobPools = built;
-			Yg.LOGGER.info("[random-drops] 随机生物池已构建：敌对 {} / 中立 {} / 友好 {}，{}",
+			Yg.LOGGER.info("[yg] 随机生物池已构建：敌对 {} / 中立 {} / 友好 {}，{}",
 					built.hostile.size(), built.neutral.size(), built.passive.size(), mobNamespaceSummary(built));
 
 			if (config.debugLog) {
-				Yg.LOGGER.info("[random-drops] 生物池样例：敌对={} 中立={} 友好={}",
+				Yg.LOGGER.info("[yg] 生物池样例：敌对={} 中立={} 友好={}",
 						sampleIds(built.hostile), sampleIds(built.neutral), sampleIds(built.passive));
 			}
 

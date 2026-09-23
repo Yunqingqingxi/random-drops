@@ -120,7 +120,7 @@ public final class DropTally {
 		}
 
 		if (DropsConfig.get().debugLog) {
-			Yg.LOGGER.info("[random-drops] 掉落统计播报：{} 种 {} 件", TALLY.size(), TOTAL.get());
+			Yg.LOGGER.info("[yg] 掉落统计播报：{} 种 {} 件", TALLY.size(), TOTAL.get());
 		}
 
 		return Component.literal(text.toString());

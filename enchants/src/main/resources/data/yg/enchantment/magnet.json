@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.magnet" },
+  "description": { "translate": "enchantment.yg.magnet" },
   "supported_items": "#minecraft:enchantable/armor",
   "weight": 8,
   "max_level": 3,

@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.thunderous" },
+  "description": { "translate": "enchantment.yg.thunderous" },
   "supported_items": [
     "minecraft:leather_helmet",
     "minecraft:chainmail_helmet",

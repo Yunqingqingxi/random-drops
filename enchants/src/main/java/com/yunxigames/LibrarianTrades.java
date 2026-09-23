@@ -89,7 +89,7 @@ public final class LibrarianTrades {
 					"§b顶级 · " + Enchantment.getFullname(pick, maxLevel).getString()));
 
 			// 代价：随机掉落主池里的一件物品 × 1~maxCount（上限 3）
-			List<String> costIds = DropRandomizer.samplePoolForBingo(level, 1, random);
+			List<String> costIds = LootSupply.samplePool(level, 1, random);
 			if (costIds.isEmpty()) {
 				return offers;
 			}

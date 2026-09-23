@@ -1,5 +1,5 @@
 {
-  "description": { "translate": "enchantment.randomdrops.swift" },
+  "description": { "translate": "enchantment.yg.swift" },
   "supported_items": "#minecraft:enchantable/foot_armor",
   "weight": 7,
   "max_level": 3,

@@ -279,7 +279,7 @@ public final class DropsSelfTest {
 			Feedback.pity(level, BlockPos.ZERO, new ItemStack(Items.DIRT), null);
 		} catch (Throwable error) {
 			feedbackSafe = false;
-			Yg.LOGGER.error("[random-drops] 保底反馈在 cause=null 时抛异常", error);
+			Yg.LOGGER.error("[yg] 保底反馈在 cause=null 时抛异常", error);
 		}
 
 		check("③ 保底可见化", triggerAt == threshold && feedbackSafe && config.showPityFeedback,
@@ -307,7 +307,7 @@ public final class DropsSelfTest {
 			Feedback.rareDrop(level, pos, new ItemStack(Items.DIAMOND), null);
 		} catch (Throwable error) {
 			broadcastSafe = false;
-			Yg.LOGGER.error("[random-drops] 稀有掉落广播抛异常", error);
+			Yg.LOGGER.error("[yg] 稀有掉落广播抛异常", error);
 		} finally {
 			config.rareDropBroadcast = saved;
 		}

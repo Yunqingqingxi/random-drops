@@ -156,8 +156,19 @@ static void checkEventsFix(MinecraftServer server, ServerLevel level, EventsConf
 static void checkMeteorRealism(MinecraftServer server, ServerLevel level, EventsConfig config) {
 		boolean savedResidue = config.meteorOreResidue;
 		config.meteorOreResidue = true;
+		// 先在落点铺一层石头平台：矿物是「从地表往下找第一个非空气非液体方块」替换的，
+		// 若 (0,0) 正好是海洋/沙滩，水面往下几格全是水，永远放不下矿 —— 那是测试环境问题，
+		// 不是功能失效。铺平之后这项自检在任何种子的新世界上都稳定。
+		int platY = level.getHeight(
+				net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, 0, 0);
+		for (int px = -3; px <= 3; px++) {
+			for (int pz = -3; pz <= 3; pz++) {
+				level.setBlock(new BlockPos(px, platY, pz),
+						net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
+			}
+		}
 		try {
-			ArmorStand owner = spawnArmorStand(level, new BlockPos(0, 90, 0));
+			ArmorStand owner = spawnArmorStand(level, new BlockPos(0, platY + 5, 0));
 			boolean spawned = owner != null
 					&& GlobalEvents.spawnMeteorEntity(level, owner, 0.5, 90.0, 0.5, config);
 			boolean tracked = spawned && GlobalEvents.trackedMeteorCountForTest() == 1;
@@ -167,8 +178,10 @@ static void checkMeteorRealism(MinecraftServer server, ServerLevel level, Events
 
 			// 模拟陨石撞地爆炸：直接移除实体，驱动矿物残留结算
 			if (tracked) {
+				// 范围覆盖整段空域：陨石的实际生成高度取决于地表高度 + meteorSpawnHeight，
+				// 写死 y 区间会漏掉它，导致后面的矿物残留结算不被触发。
 				for (var e : level.getEntities((Entity) null,
-						new AABB(-4, 100, -4, 4, 130, 4), x -> true)) {
+						new AABB(-8, 40, -8, 8, 320, 8), x -> true)) {
 					e.discard();
 				}
 			}
@@ -176,9 +189,12 @@ static void checkMeteorRealism(MinecraftServer server, ServerLevel level, Events
 
 			// 落点附近应出现矿物（爆炸坑内嵌矿）
 			boolean oreFound = false;
-			int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, 0, 0);
+			// 与 GlobalEvents 的放置逻辑对齐：每个方块各自取自己的地表高度，
+			// 否则地形起伏时（新世界尤其明显）会扫不到矿，误判成功能失效。
 			for (int dx = -2; dx <= 2 && !oreFound; dx++) {
 				for (int dz = -2; dz <= 2 && !oreFound; dz++) {
+					int surfaceY = level.getHeight(
+							net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, dx, dz);
 					for (int dy = 0; dy < 6 && !oreFound; dy++) {
 						var st = level.getBlockState(new BlockPos(dx, surfaceY - 1 - dy, dz));
 						Identifier bid = BuiltInRegistries.BLOCK.getKey(st.getBlock());

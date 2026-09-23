@@ -13,4 +13,4 @@ pluginManagement {
 // core 即原本的 randomdrops 主模块（配置 / 掉落逻辑 / 玩法 / 自检框架），
 // enchants / events / mobs 作为可独立嵌入的子模块依赖 core。
 rootProject.name = 'yunxigames'
-include 'core', 'drops', 'bingo', 'enchants', 'events', 'mobs'
+include 'drops', 'bingo', 'enchants', 'events', 'mobs'

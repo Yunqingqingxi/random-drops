@@ -18,8 +18,4 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	// 依赖 yg-core 基础库（类会一起打进本包 jar）
-	implementation project(':core')
-	// 悬赏奖励 / 福到礼物的随机物品来自随机掉落引擎（运行时要求已安装 yg_drops）
-	implementation project(':drops')
 }

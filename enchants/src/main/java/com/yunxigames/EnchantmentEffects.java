@@ -428,7 +428,7 @@ public final class EnchantmentEffects {
 
 		int hits = 0;
 		for (Entity e : level.getEntities(wearer, box,
-				x -> x instanceof Mob && DropRandomizer.isHostile(x.getType(), com.yunxigames.DropsConfig.get()))) {
+				x -> x instanceof Mob && LootSupply.isHostile(x.getType()))) {
 			((Mob) e).addEffect(new MobEffectInstance(
 					MobEffects.SLOWNESS, 60, enchLevel - 1));
 			hits++;
@@ -495,7 +495,7 @@ public final class EnchantmentEffects {
 			return;
 		}
 
-		ItemStack extra = DropRandomizer.randomLootOne(level, pos, random);
+		ItemStack extra = LootSupply.randomItem(level, pos, random);
 		if (!extra.isEmpty()) {
 			Block.popResource(level, pos, extra);
 			notify(player, "§6[贪婪] " + extra.getHoverName().getString() + " ×" + extra.getCount()
