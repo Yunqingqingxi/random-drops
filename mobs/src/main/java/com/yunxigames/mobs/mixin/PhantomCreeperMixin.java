@@ -1,11 +1,7 @@
 package com.yunxigames.mobs.mixin;
 
 import com.yunxigames.MobsConfig;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Phantom;
@@ -32,19 +28,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Mob.class)
 public abstract class PhantomCreeperMixin {
 
-	/** 自定义音频：res/bz.mp3 转码出的 ogg（{@code yg_mobs:phantom_creeper}）。 */
-	private static final Identifier SOUND_ID = Identifier.parse("yg_mobs:phantom_creeper");
-	private static SoundEvent customSound;
-
-	/** 懒加载自定义音效：等 YunxiGamesMobs 在 onInitialize 里注册完再取；取不到就静默。 */
-	private static SoundEvent customSound() {
-		if (customSound == null) {
-			customSound = BuiltInRegistries.SOUND_EVENT.get(SOUND_ID)
-					.map(h -> h.value()).orElse(null);
-		}
-		return customSound;
-	}
-
 	/** 俯冲命中即引爆 —— 苦力怕的爆炸能力（仅幻翼生效）。 */
 	@Inject(method = "doHurtTarget", at = @At("HEAD"))
 	private void yg$explodeOnHit(ServerLevel level, Entity target, CallbackInfoReturnable<Boolean> cir) {
@@ -63,16 +46,8 @@ public abstract class PhantomCreeperMixin {
 			return;
 		}
 
-		// 俯冲命中：播放自定义音频（bz.ogg）—— 这是"苦力怕幻翼"的登场声，
-		// 与爆炸同时发生，玩家听到就知道被俯冲撞上了。
-		if (MobsConfig.get().phantomSoundBz) {
-			SoundEvent se = customSound();
-			if (se != null) {
-				level.playSound(null, phantom.getX(), phantom.getY(), phantom.getZ(),
-						se, SoundSource.HOSTILE, 1.5F, 1.0F);
-			}
-		}
-
+		// 音效不在这里播：俯冲音效已挪到「俯冲刚开始」那一刻
+		// （见 PhantomSweepSoundMixin），命中只负责爆炸。
 		boolean fire = MobsConfig.get().phantomCreeperExplosionFire;
 
 		// 临时无敌：避免混合生物每次俯冲都把自己炸死，保住「幻翼原能力」。

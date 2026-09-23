@@ -12,17 +12,13 @@
 	"entrypoints": {
 		"main": [
 			"com.yunxigames.YunxiGamesMobs"
+		],
+		"client": [
+			"com.yunxigames.mobs.client.YunxiGamesMobsClient"
 		]
 	},
 	"mixins": [
-		{
-			"config": "yg-mobs.mixins.json",
-			"environment": "*"
-		},
-		{
-			"config": "yg-mobs.client.mixins.json",
-			"environment": "client"
-		}
+		"yg-mobs.mixins.json"
 	],
 	"depends": {
 		"fabricloader": "~0.19.5",

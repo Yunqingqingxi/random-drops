@@ -48,8 +48,9 @@ public final class MobsConfig extends YgConfig {
 	public boolean phantomCreeperExplosionFire = false;
 
 	/**
-	 * 是否把幻翼的<b>原版音效</b>替换为自定义音频（{@code assets/yg_mobs/sounds/phantom_creeper.ogg}）。
-	 * false 则保留原版幻翼音效，模块不触碰声音。
+	 * 幻翼<b>俯冲开始</b>时是否播放自定义音频
+	 * （{@code assets/yg_mobs/sounds/phantom_creeper.ogg}，即 res/bz.mp3 转码）。
+	 * false 则俯冲静默，不影响其它音效开关（爆炸是独立配置）。
 	 */
 	public boolean phantomSoundBz = true;
 
