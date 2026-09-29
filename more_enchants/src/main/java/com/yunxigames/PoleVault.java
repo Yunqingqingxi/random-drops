@@ -10,13 +10,16 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -28,29 +31,38 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 「蓝银撑杆跳」玩法：木棍附魔后右键，把杆立在地上、人撑起来向前飞出去。
+ * 「蓝银撑杆跳」玩法：木棍附魔后右键立杆、按住蓄力，松手把杆撑起来向前飞出去。
  *
- * <h2>动作分解（三步，每一步都能单独解释）</h2>
+ * <h2>动作全流程（每一步都能单独解释）</h2>
  * <ol>
- *   <li><b>立杆</b>：校验「踩在地上 / 有助跑速度 / 头顶有净空」→ 在起跳点前方 {@value #PLANT_AHEAD}
- *       格立起一根杆，高度 = {@code min(配置杆长, 头顶净空)} —— 杆穿不过石头，洞穴里就只能立矮杆。</li>
- *   <li><b>起跳</b>：给玩家一个冲量，之后完全交给原版抛物线（客户端自己积分，服务端只发速度，
- *       与三叉戟激流、风弹同一条通道）。竖直初速由 {@link PoleVaultPhysics#solveLaunch} 反解，
- *       水平速度照搬助跑 —— <b>所以跑得越快飞得越远，站着不动根本撑不起来</b>。</li>
- *   <li><b>倒杆</b>：杆绕底端做匀质细杆的刚体倒伏（α = 3g/2L·sinθ）。倒向与起跳方向<b>相反</b>：
- *       人向前上方翻过杆顶，杆受到的反向角冲量把它推回助跑方向 —— 角动量守恒，现实里的撑杆跳
- *       也是人过杆、杆往跑道那边倒。</li>
+ *   <li><b>立杆</b>（右键按下）：校验「踩在地上 / 有助跑速度 / 头顶有净空」→ 在起跳点前方
+ *       {@value #PLANT_AHEAD} 格立起一根 {@code poleVaultLength} 格高的杆。
+ *       <b>助跑方向与水平动量在这一刻存下来</b> —— 立杆后原地蓄力，松手时把动量还给你。</li>
+ *   <li><b>蓄力</b>（按住右键）：蓝银草每秒往上长「{@code poleVaultGrowPerSecond} + 每级加成」格，
+ *       一路把挡路的方块顶碎（{@code poleVaultFragileSeconds} 起顶得动泥土木头这类易碎方块，
+ *       {@code poleVaultStoneSeconds} 起连石头类也顶得动；基岩/黑曜石永远顶不动 → 杆停在它下面）。
+ *       蓄力到 {@code poleVaultMaxChargeSeconds} 自动起跳。</li>
+ *   <li><b>起跳</b>（松手）：一个冲量 + 之后纯原版抛物线。竖直初速由
+ *       {@link PoleVaultPhysics#solveLaunch} 反解 MC 的积分器得到，峰值 = 杆顶留白后的高度
+ *       + 助跑动能折算的高度 —— <b>杆有多长就能撑多高，没有人为上限</b>；
+ *       水平速度照搬立杆那一刻的助跑动量。</li>
+ *   <li><b>收场</b>：短杆整根倒伏（刚体，倒向与起跳方向相反 = 角动量守恒），长杆自顶向下散掉。</li>
  * </ol>
  *
- * <h2>为什么杆是粒子而不是实体</h2>
- * <p>26.2 里 {@code Display.BlockDisplay#setBlockState}、{@code Display#setTransformation} 全是
- * private，想做「实体杆」得再加一个 {@code @Invoker} mixin，而且实体是<b>会进存档</b>的：
- * 服务端异常退出就会在世界里留下残骸。粒子杆零状态、不需要客户端 mod、进程没了也不会留东西，
- * 而且倒伏时粒子跟着杆转，观感反而更「蓝银草」。代价是杆不挡路 —— 这是刻意的取舍。
+ * <h2>「松手」是怎么拿到的（不装客户端 mod 的唯一通道）</h2>
+ * <p>立杆时服务端调 {@link ServerPlayer#startUsingItem} 把玩家置成「使用中」：
+ * 客户端 {@code Minecraft#handleKeybinds} 里 {@code isUsingItem() && !keyUse.isDown()}
+ * 会立刻发 {@code RELEASE_USE_ITEM}，服务端 {@code handlePlayerAction} 收到就清标志 ——
+ * 所以我们只要盯着 {@code isUsingItem()} 变假，就是「松手」，延迟最多 1 刻。
+ *
+ * <p>万一这个「使用中」状态没生效（原版对 useDuration = 0 的物品没有明确保证），还有兜底：
+ * 按住右键时客户端每 4 刻发一次 use 包，我们的回调会一直被调用；断流超过
+ * {@value #RELEASE_GAP_TICKS} 刻就当作松手。两条通道谁先到用谁，再加「蓄力到顶自动起跳」兜底，
+ * 玩家永远不会卡在蓄力状态里。
  *
  * <h2>零持久化</h2>
- * <p>杆与落地缓冲都只活在内存里（{@link #POLES} / {@link #CUSHION}），关服即清；
- * 冷却走原版物品冷却，不写任何 NBT。
+ * <p>杆、蓄力、落地缓冲都只活在内存里（{@link #POLES} / {@link #CHARGES} / {@link #CUSHION}），
+ * 关服即清；冷却走原版物品冷却，不写任何 NBT。
  */
 public final class PoleVault {
 	private PoleVault() {
@@ -62,46 +74,70 @@ public final class PoleVault {
 	/** 杆倒平之后的淡出时长（刻）。 */
 	static final int FADE_TICKS = 15;
 
-	/** 撒粒子的节奏：每几刻沿杆撒一趟（每刻都撒会刷屏，也费带宽）。 */
-	static final int PARTICLE_INTERVAL = 2;
+	/** 长杆自顶向下散掉用多久（刻）。 */
+	static final int DISSOLVE_TICKS = 30;
 
-	/** 落地缓冲窗口（刻，3 秒）：够覆盖整段腾空，且不会变成长期免摔落。 */
-	static final int CUSHION_TICKS = 60;
+	/** 撒粒子的节奏：每几刻沿杆撒一趟（杆可以很长，不能每刻都撒）。 */
+	static final int PARTICLE_INTERVAL = 3;
+
+	/** 沿杆撒粒子的采样上限：杆再长也只撒这么多个点（否则几百格杆会刷爆带宽）。 */
+	static final int MAX_PARTICLES = 24;
+
+	/** 蓄力时动作栏提示的刷新间隔（刻）。 */
+	static final int HINT_INTERVAL = 10;
+
+	/**
+	 * 落地缓冲的最长保护时间（刻，30 秒）。
+	 *
+	 * <p>正常情况缓冲到「人真的落地」就结束；这个上限只是兜底：万一玩家落在水里 / 藤蔓上
+	 * 一直不算落地，也不会变成永久免摔落。
+	 */
+	static final int CUSHION_TICKS = 20 * 30;
 
 	/** 起跳失败后的短冷却（刻）：只为防刷屏，不占用完整冷却。 */
 	static final int FAIL_COOLDOWN_TICKS = 10;
+
+	/**
+	 * 右键包断流多少刻算「松手」（兜底通道）。
+	 *
+	 * <p>客户端按住右键时每 4 刻发一次 use 包，所以阈值必须大于 4；取 5 意味着最坏情况
+	 * 松手后 5 刻内一定被发现。
+	 */
+	static final int RELEASE_GAP_TICKS = 5;
 
 	/** 杆倒平的角度（弧度）。 */
 	private static final double MAX_TILT = Math.PI / 2.0D;
 
 	/**
-	 * 一根立在地上的杆。纯内存态。
+	 * 一根立在地上的杆。
 	 *
-	 * <p>杆的姿态只有一个自由度：与竖直方向的夹角 {@link #tilt}；倒伏方向在立杆时就定死。
+	 * <p>{@link #length} 在蓄力期间会一路增长；{@link #released} 为真之后才谈得上倒伏 / 散开。
 	 */
 	static final class Pole {
-		final ServerLevel level;
+		final ServerLevel world;
 		/** 杆底（起跳点前方的地面）。 */
 		final Vec3 base;
-		/** 杆长（格）。 */
-		final double length;
-		/** 倒伏方向（水平单位向量，与起跳方向相反）。 */
-		final Vec3 fallDir;
+		/** 当前杆长（格，含基础长度）。 */
+		double length;
+		/** 倒伏方向（水平单位向量，与起跳方向相反）；蓄力期间是零向量。 */
+		Vec3 fallDir = Vec3.ZERO;
 		/** 与竖直方向的夹角（弧度，0 = 立正）。 */
 		double tilt;
 		/** 角速度（弧度/刻）。 */
 		double omega;
-		/** 已存在的刻数（只用来控制粒子节奏）。 */
+		/** 已存在的刻数（控制粒子节奏）。 */
 		int age;
-		/** &gt;0 表示已倒平/撞墙，正在淡出。 */
+		/** &gt;0 表示正在淡出（倒平 / 撞墙之后）。 */
 		int fade;
+		/** &gt;0 表示正在自顶向下散开（长杆的收场）。 */
+		int dissolve;
+		/** 是否已经脱离蓄力（放手或中断）。 */
+		boolean released;
 
-		Pole(ServerLevel level, Vec3 base, double length, Vec3 fallDir, double omega) {
-			this.level = level;
+		Pole(ServerLevel world, Vec3 base, double length) {
+			this.world = world;
 			this.base = base;
 			this.length = length;
-			this.fallDir = fallDir;
-			this.omega = omega;
 		}
 
 		/** 杆上参数位置（0 = 杆底，1 = 杆顶）的世界坐标。 */
@@ -115,20 +151,62 @@ public final class PoleVault {
 		}
 	}
 
+	/** 一次进行中的蓄力（按玩家记）。 */
+	static final class Charge {
+		final UUID playerId;
+		final ServerLevel world;
+		final Pole pole;
+		/** 立杆那一刻的助跑方向（水平单位向量）。 */
+		final Vec3 dir;
+		/** 立杆那一刻的水平速度（动量守恒的那份动量）。 */
+		final double momentum;
+		/** 立杆时的附魔等级（决定生长速度）。 */
+		final int enchLevel;
+		/** 已蓄力刻数。 */
+		int chargeTicks;
+		/** 最近一次收到右键包的游戏刻（兜底通道用）。 */
+		long lastCallbackTick;
+		/** 客户端是否进过「使用中」状态（进了就走精确通道）。 */
+		boolean sawUsing;
+		/** 已经播报到第几档（0 没播 / 1 易碎档 / 2 石头档）。 */
+		int announcedTier;
+
+		Charge(UUID playerId, ServerLevel world, Pole pole, Vec3 dir, double momentum, int enchLevel) {
+			this.playerId = playerId;
+			this.world = world;
+			this.pole = pole;
+			this.dir = dir;
+			this.momentum = momentum;
+			this.enchLevel = enchLevel;
+		}
+	}
+
 	/** 世界里立着的杆（内存态，关服清空）。 */
 	private static final List<Pole> POLES = new ArrayList<>();
 
-	/** 正在享受落地缓冲的玩家：UUID → 剩余刻数。 */
-	private static final Map<UUID, Integer> CUSHION = new HashMap<>();
+	/** 正在蓄力的玩家：UUID → 蓄力状态。 */
+	private static final Map<UUID, Charge> CHARGES = new HashMap<>();
+
+	/** 落地缓冲状态：起跳后按住摔落距离，直到人真的落地（或超时兜底）。 */
+	static final class Cushion {
+		/** 是否已经确认离地（起跳那一两刻服务端还以为人站在地上）。 */
+		boolean airborne;
+		/** 剩余保护刻数（超时兜底）。 */
+		int left = CUSHION_TICKS;
+	}
+
+	/** 正在享受落地缓冲的玩家：UUID → 缓冲状态。 */
+	private static final Map<UUID, Cushion> CUSHION = new HashMap<>();
 
 	/** 挂上右键钩子。 */
 	public static void register() {
 		UseItemCallback.EVENT.register(PoleVault::onUseItem);
 	}
 
-	/** 关服清理：杆是粒子、缓冲是内存计数，丢掉即可。 */
+	/** 关服清理：杆是粒子、蓄力与缓冲是内存计数，丢掉即可。 */
 	public static void reset() {
 		POLES.clear();
+		CHARGES.clear();
 		CUSHION.clear();
 	}
 
@@ -154,6 +232,13 @@ public final class PoleVault {
 			return InteractionResult.PASS;
 		}
 
+		// 蓄力中：这次右键包只是「还按着」的心跳，不重新立杆
+		Charge charging = CHARGES.get(sp.getUUID());
+		if (charging != null) {
+			charging.lastCallbackTick = level.getGameTime();
+			return InteractionResult.SUCCESS;
+		}
+
 		Holder<Enchantment> holder = ModEnchantments.poleVault(level);
 		int enchLevel = ModEnchantments.getLevel(stack, holder);
 		if (enchLevel <= 0) {
@@ -173,7 +258,8 @@ public final class PoleVault {
 			return fail(sp, stack, "§7[蓝银撑杆跳] 得先踩在地上才立得住杆");
 		}
 
-		// 助跑：方向取「助跑方向」而不是视线方向 —— 撑杆跳是沿动量方向飞出去的
+		// 助跑：方向取「助跑方向」而不是视线方向 —— 撑杆跳是沿动量方向飞出去的。
+		// 动量在这一刻存下来，立杆后原地蓄力不会把它丢掉。
 		Vec3 runUp = sp.getKnownMovement();
 		double speed = Math.sqrt(runUp.x * runUp.x + runUp.z * runUp.z);
 		if (speed < config.poleVaultMinRunUp || speed < 1.0E-4D) {
@@ -188,39 +274,22 @@ public final class PoleVault {
 		if (clearance < 2) {
 			return fail(sp, stack, "§7[蓝银撑杆跳] 头顶只剩 " + clearance + " 格，杆立不起来");
 		}
-		double poleLength = Math.min(Math.max(2.0D, config.poleVaultLength), clearance);
-
-		PoleVaultPhysics.Launch launch = PoleVaultPhysics.solveLaunch(
-				speed, enchLevel, poleLength,
-				config.poleVaultApexPerLevel, config.poleVaultRunUpEfficiency,
-				config.poleVaultMinRunUp, config.poleVaultForwardRetain);
-		if (launch.refused()) {
-			return fail(sp, stack, "§7[蓝银撑杆跳] 这一跳没撑起来");
-		}
 
 		Vec3 base = new Vec3(column.getX() + 0.5D, sp.getY(), column.getZ() + 0.5D);
+		Pole pole = plant(level, base, Math.min(config.poleVaultLength, clearance));
 
-		// 1) 立杆：倒向与起跳方向相反（角动量守恒）
-		plant(level, base, poleLength, dir.scale(-1.0D), config.poleVaultToppleNudge);
+		Charge charge = new Charge(sp.getUUID(), level, pole, dir, speed, enchLevel);
+		charge.lastCallbackTick = level.getGameTime();
+		CHARGES.put(sp.getUUID(), charge);
 
-		// 2) 起跳：竖直初速来自「杆的弹性能 + 助跑动能」预算，水平速度照搬助跑动量
-		sp.setDeltaMovement(
-				dir.x * launch.horizontalSpeed(), launch.vy(), dir.z * launch.horizontalSpeed());
-		sp.hurtMarked = true;   // 与击退同一条通道：让客户端把速度换成这一份（玩家速度是客户端权威）
-		sp.resetFallDistance();
+		// 把玩家置成「使用中」：客户端一松手就会发 RELEASE_USE_ITEM（服务端当刻清标志），
+		// 这是不装客户端 mod 也能拿到「松手」信号的正路
+		sp.startUsingItem(InteractionHand.MAIN_HAND);
 
-		// 3) 演出与冷却
 		level.playSound(null, base.x, base.y, base.z,
 				SoundEvents.BAMBOO_PLACE, SoundSource.PLAYERS, 1.0F, 0.8F);
-		level.playSound(null, sp.getX(), sp.getY(), sp.getZ(),
-				SoundEvents.TRIDENT_RIPTIDE_2, SoundSource.PLAYERS, 1.0F, 1.0F);
-		sp.getCooldowns().addCooldown(stack, Math.max(1, config.poleVaultCooldownTicks));
-		if (config.poleVaultCushionedLanding) {
-			CUSHION.put(sp.getUUID(), CUSHION_TICKS);
-		}
-
-		sp.sendSystemMessage(Component.literal("§b[蓝银撑杆跳] §7杆立起 " + SelfTest.trim(poleLength)
-				+ " 格，腾空 " + SelfTest.trim(launch.apex()) + " 格！"), true);
+		sp.sendSystemMessage(Component.literal("§b[蓝银撑杆跳] §7杆立起 "
+				+ SelfTest.trim(pole.length) + " 格 —— §f按住右键蓄力§7，松手起跳"), true);
 
 		return InteractionResult.SUCCESS;
 	}
@@ -234,21 +303,145 @@ public final class PoleVault {
 
 	// ------------------------------------------------------------ 每刻
 
-	/** 每刻推进：倒杆积分 + 落地缓冲。由入口挂在 END_SERVER_TICK 上。 */
+	/** 每刻推进：蓄力生长 + 倒杆积分 + 落地缓冲。由入口挂在 END_SERVER_TICK 上。 */
 	static void tick(MinecraftServer server) {
 		EnchantsConfig config = EnchantsConfig.get();
 		if (!config.enableEnchantmentBreakthrough || !config.enablePoleVault) {
-			// 玩法被关掉：内存里的杆直接丢掉（它们本来就只是粒子，不留世界状态）
+			// 玩法被关掉：内存里的杆与蓄力直接丢掉（它们本来就只是粒子，不留世界状态）
 			POLES.clear();
+			CHARGES.clear();
 			CUSHION.clear();
 			return;
 		}
 
+		tickCharges(server, config);
 		tickPoles(config);
 		tickCushion(server, config);
 	}
 
-	/** 倒杆：刚体倒伏 + 撞墙停住 + 倒平后淡出。 */
+	/** 蓄力推进：生长 + 顶碎方块 + 松手判定。 */
+	private static void tickCharges(MinecraftServer server, EnchantsConfig config) {
+		if (CHARGES.isEmpty()) {
+			return;
+		}
+
+		int maxTicks = maxChargeTicks(config);
+		Iterator<Map.Entry<UUID, Charge>> it = CHARGES.entrySet().iterator();
+		while (it.hasNext()) {
+			Charge charge = it.next().getValue();
+			ServerPlayer player = server.getPlayerList().getPlayer(charge.playerId);
+
+			String abort = abortReason(player, charge, config);
+			if (abort != null) {
+				it.remove();
+				dissolve(charge.pole);
+				if (player != null) {
+					player.stopUsingItem();
+					player.sendSystemMessage(Component.literal(abort), true);
+				}
+				continue;
+			}
+
+			boolean full = charge.chargeTicks >= maxTicks;
+			if (!full) {
+				charge.chargeTicks++;
+			}
+
+			growTo(charge.pole, charge.chargeTicks, charge.enchLevel, player, config);
+			announceTier(player, charge, config);
+			emitParticles(charge.pole, config, charge.pole.length);
+
+			if (charge.chargeTicks % HINT_INTERVAL == 0 || full) {
+				hint(player, charge, config, full);
+			}
+
+			if (full || isReleased(player, charge)) {
+				it.remove();
+				launch(player, charge, config);
+			}
+		}
+	}
+
+	/**
+	 * 「松手」判定：优先用原版的「使用中」状态（≤1 刻延迟），退回右键包心跳
+	 * （≤ {@value #RELEASE_GAP_TICKS} 刻延迟）。
+	 */
+	private static boolean isReleased(ServerPlayer player, Charge charge) {
+		boolean using = player.isUsingItem();
+		if (charge.sawUsing) {
+			// 客户端进过使用状态：它一松手就发 RELEASE_USE_ITEM，服务端立刻清标志
+			return !using;
+		}
+
+		charge.sawUsing = using;
+		return charge.world.getGameTime() - charge.lastCallbackTick > RELEASE_GAP_TICKS;
+	}
+
+	/** 蓄力中断的原因（null = 一切正常）。 */
+	private static String abortReason(ServerPlayer player, Charge charge, EnchantsConfig config) {
+		if (player == null || !player.isAlive()) {
+			return "§7[蓝银撑杆跳] 蓄力中断";
+		}
+		if (player.isPassenger() || player.isFallFlying()) {
+			return "§7[蓝银撑杆跳] 蓄力中断";
+		}
+		if (player.hurtTime > 0) {
+			return "§c[蓝银撑杆跳] 挨了一下，蓄力散了";
+		}
+		if (!player.getMainHandItem().is(Items.STICK)
+				|| ModEnchantments.getLevel(player.getMainHandItem(),
+						ModEnchantments.poleVault(charge.world)) <= 0) {
+			return "§7[蓝银撑杆跳] 手里的杆没了";
+		}
+
+		double max = config.poleVaultChargeMaxDistance;
+		Vec3 base = charge.pole.base;
+		if (player.distanceToSqr(base.x, base.y, base.z) > max * max) {
+			return "§7[蓝银撑杆跳] 离杆太远，蓄力散了";
+		}
+		return null;
+	}
+
+	/** 蓄力进度提示（动作栏）。 */
+	private static void hint(ServerPlayer player, Charge charge, EnchantsConfig config, boolean full) {
+		StringBuilder text = new StringBuilder("§b[蓝银撑杆跳] §7蓄力 ")
+				.append(SelfTest.trim(charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND))
+				.append(" s · 杆高 ").append(SelfTest.trim(charge.pole.length)).append(" 格");
+		if (full) {
+			text.append(" §e(已满，起跳！)");
+		} else if (charge.pole.length >= worldHeadroom(charge.pole)) {
+			text.append(" §c(到世界顶了)");
+		} else if (!canGrow(charge, config)) {
+			text.append(" §c(顶住了：这块顶不动)");
+		}
+		player.sendSystemMessage(Component.literal(text.toString()), true);
+	}
+
+	/** 跨过 6 秒 / 30 秒档位时给一次反馈音 + 文案（只在跨过的那一刻播）。 */
+	private static void announceTier(ServerPlayer player, Charge charge, EnchantsConfig config) {
+		double seconds = charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND;
+		int tier = seconds >= config.poleVaultStoneSeconds ? 2
+				: seconds >= config.poleVaultFragileSeconds ? 1 : 0;
+		if (tier <= charge.announcedTier) {
+			return;
+		}
+		charge.announcedTier = tier;
+
+		Vec3 base = charge.pole.base;
+		if (tier == 1) {
+			charge.pole.world.playSound(null, base.x, base.y, base.z,
+					SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.5F, 1.6F);
+			player.sendSystemMessage(Component.literal(
+					"§b[蓝银撑杆跳] §7蓝银草开始顶碎易碎方块了"), true);
+		} else {
+			charge.pole.world.playSound(null, base.x, base.y, base.z,
+					SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.7F, 0.9F);
+			player.sendSystemMessage(Component.literal(
+					"§d[蓝银撑杆跳] §7蓝银草硬化 —— 连石头也顶得动了"), true);
+		}
+	}
+
+	/** 倒杆 / 散开 / 淡出。 */
 	static void tickPoles(EnchantsConfig config) {
 		if (POLES.isEmpty()) {
 			return;
@@ -262,11 +455,25 @@ public final class PoleVault {
 			if (pole.fade > 0) {
 				pole.fade--;
 				// 淡出时从杆顶往下收：像草叶散掉，而不是整体变淡
-				emitParticles(pole, config, (double) pole.fade / FADE_TICKS);
+				emitParticles(pole, config, pole.length * (double) pole.fade / FADE_TICKS);
 				if (pole.fade <= 0) {
 					it.remove();
 				}
 				continue;
+			}
+
+			if (pole.dissolve > 0) {
+				// 长杆的收场：自顶向下散开（长杆整根倒伏要十几秒，还会横扫半个屏幕）
+				pole.dissolve--;
+				emitParticles(pole, config, pole.length * (double) pole.dissolve / DISSOLVE_TICKS);
+				if (pole.dissolve <= 0) {
+					it.remove();
+				}
+				continue;
+			}
+
+			if (!pole.released) {
+				continue; // 还在蓄力：粒子和生长由 tickCharges 负责
 			}
 
 			double[] next = PoleVaultPhysics.stepTopple(pole.tilt, pole.omega, pole.length, MAX_TILT);
@@ -279,45 +486,219 @@ public final class PoleVault {
 			if (flat || blocked) {
 				pole.fade = FADE_TICKS;
 				Vec3 tip = pole.pointAt(0.9D);
-				pole.level.playSound(null, tip.x, tip.y, tip.z,
+				pole.world.playSound(null, tip.x, tip.y, tip.z,
 						SoundEvents.BAMBOO_BREAK, SoundSource.PLAYERS, 0.8F, flat ? 0.7F : 1.2F);
 			}
 
-			emitParticles(pole, config, 1.0D);
+			emitParticles(pole, config, pole.length);
 		}
 	}
 
-	/** 落地缓冲：腾空期间把摔落距离按住 —— fallDistance 是摔伤的唯一输入。 */
+	/**
+	 * 落地缓冲：腾空期间把摔落距离按住 —— fallDistance 是摔伤的唯一输入。
+	 *
+	 * <p>持续到「人真的落地」，而不是固定几秒 —— 蓄满 5 分钟能撑到 250 格以上，
+	 * 整段飞行本来就超过 3 秒，固定窗口会让蓄得最狠的那一跳摔死（最不该摔死的一跳）。
+	 */
 	private static void tickCushion(MinecraftServer server, EnchantsConfig config) {
 		if (CUSHION.isEmpty()) {
 			return;
 		}
 
-		Iterator<Map.Entry<UUID, Integer>> it = CUSHION.entrySet().iterator();
+		Iterator<Map.Entry<UUID, Cushion>> it = CUSHION.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<UUID, Integer> entry = it.next();
+			Map.Entry<UUID, Cushion> entry = it.next();
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-			int left = entry.getValue() - 1;
-			if (player == null || left <= 0) {
+			Cushion cushion = entry.getValue();
+
+			if (player == null) {
 				it.remove();
 				continue;
 			}
-			entry.setValue(left);
 
-			// 起跳那一两刻服务端还以为人站在地上，这里只对「真的在空中」的刻做卸力
-			if (config.poleVaultCushionedLanding && !player.onGround()) {
+			if (!cushion.airborne) {
+				// 起跳那一两刻服务端还以为人站在地上：先等它真的离地
+				cushion.airborne = !player.onGround();
+			} else if (player.onGround()) {
+				it.remove(); // 落地：这一跳结束了
+				continue;
+			}
+
+			if (--cushion.left <= 0) {
+				it.remove(); // 超时兜底（落在水里 / 藤蔓上迟迟不算落地）
+				continue;
+			}
+
+			if (config.poleVaultCushionedLanding && cushion.airborne) {
 				player.resetFallDistance();
 			}
 		}
 	}
 
+	// ------------------------------------------------------------ 生长与顶碎
+
+	/** 蓄力上限换算成刻。 */
+	static int maxChargeTicks(EnchantsConfig config) {
+		return (int) Math.round(Math.max(1.0D, config.poleVaultMaxChargeSeconds)
+				* PoleVaultPhysics.TICKS_PER_SECOND);
+	}
+
+	/**
+	 * 把杆长推进到「这么多刻蓄力」应有的高度，一路顶碎挡路的方块，返回推进后的长度。
+	 *
+	 * <p>每刻只推进一小段（生长速度 ÷ 20 格），所以正常情况下一次只会碰到一个新方块；
+	 * 自检可以一次性喂一个大蓄力值，把整段柱子的判定跑完。
+	 */
+	static double growTo(Pole pole, int chargeTicks, int level, Entity breaker, EnchantsConfig config) {
+		double target = Math.min(
+				PoleVaultPhysics.targetLength(config.poleVaultLength, chargeTicks, level,
+						config.poleVaultGrowPerSecond, config.poleVaultGrowPerLevelExtra,
+						config.poleVaultMaxChargeSeconds),
+				worldHeadroom(pole));
+		if (pole.length >= target) {
+			return pole.length;
+		}
+
+		double step = PoleVaultPhysics.growthRate(level, config.poleVaultGrowPerSecond,
+				config.poleVaultGrowPerLevelExtra) / PoleVaultPhysics.TICKS_PER_SECOND;
+		double next = Math.min(target, pole.length + Math.max(step, 1.0E-3D));
+
+		int from = (int) Math.floor(pole.length);
+		int to = (int) Math.floor(next - 1.0E-6D);
+		for (int i = from; i <= to; i++) {
+			if (!passOrBreak(pole, i, chargeTicks, breaker, config)) {
+				pole.length = Math.max(pole.length, i); // 顶到这块打不动的方块的底部
+				return pole.length;
+			}
+		}
+
+		pole.length = next;
+		return pole.length;
+	}
+
+	/** 杆现在还能不能往上长 —— 只为给玩家一句「顶住了」的动作栏提示。 */
+	private static boolean canGrow(Charge charge, EnchantsConfig config) {
+		Pole pole = charge.pole;
+		int index = (int) Math.floor(pole.length);
+		BlockPos pos = BlockPos.containing(pole.base.x, pole.base.y + index, pole.base.z);
+		BlockState state = pole.world.getBlockState(pos);
+		if (state.getCollisionShape(pole.world, pos).isEmpty()) {
+			return true;
+		}
+		return PoleVaultPhysics.canBreakAt(
+				charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND,
+				state.is(BlockTags.MINEABLE_WITH_PICKAXE, s -> true),
+				state.getDestroySpeed(pole.world, pos),
+				config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
+				config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness);
+	}
+
+	/**
+	 * 第 {@code index} 格（相对杆底）能不能过：空气/花草直接穿，顶得碎就顶碎，顶不动就停住。
+	 *
+	 * <p>石头类走 {@code #minecraft:mineable/pickaxe} tag、难易走硬度 —— 不硬编码方块 id，
+	 * 别人 mod 加的方块会自动落到正确档位。
+	 */
+	private static boolean passOrBreak(Pole pole, int index, int chargeTicks, Entity breaker,
+			EnchantsConfig config) {
+		ServerLevel level = pole.world;
+		BlockPos pos = BlockPos.containing(pole.base.x, pole.base.y + index, pole.base.z);
+		BlockState state = level.getBlockState(pos);
+
+		// 没有碰撞体积的东西（空气 / 花草 / 火把 / 水）直接穿过去，也不去破坏它们
+		if (state.getCollisionShape(level, pos).isEmpty()) {
+			return true;
+		}
+
+		if (!PoleVaultPhysics.canBreakAt(
+				chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND,
+				state.is(BlockTags.MINEABLE_WITH_PICKAXE, s -> true),
+				state.getDestroySpeed(level, pos),
+				config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
+				config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness)) {
+			return false;
+		}
+
+		// 走原版破坏流程：掉落按原版来；2001 = 原版的「方块被破坏」粒子/音效事件
+		level.destroyBlock(pos, config.poleVaultBreakDrops, breaker, 512);
+		level.levelEvent(null, 2001, pos, Block.getId(state));
+		level.playSound(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+				SoundEvents.BAMBOO_BREAK, SoundSource.PLAYERS, 0.7F, 1.3F);
+		return true;
+	}
+
+	/** 世界上方还剩多少格（杆再长也没意义，还会把人送出世界）。 */
+	private static double worldHeadroom(Pole pole) {
+		return Math.max(1.0D, pole.world.getMaxY() - pole.base.y - 1.0D);
+	}
+
+	// ------------------------------------------------------------ 起跳与收场
+
+	private static void launch(ServerPlayer player, Charge charge, EnchantsConfig config) {
+		Pole pole = charge.pole;
+		PoleVaultPhysics.Launch launch = PoleVaultPhysics.solveLaunch(
+				charge.momentum, pole.length, config.poleVaultRunUpEfficiency,
+				config.poleVaultMinRunUp, config.poleVaultForwardRetain);
+
+		player.stopUsingItem();
+
+		if (launch.refused()) {
+			dissolve(pole);
+			player.sendSystemMessage(Component.literal("§7[蓝银撑杆跳] 这一跳没撑起来"), true);
+			return;
+		}
+
+		// 起跳：竖直初速来自杆长（蓄力越久杆越高），水平速度照搬立杆时的助跑动量
+		player.setDeltaMovement(charge.dir.x * launch.horizontalSpeed(), launch.vy(),
+				charge.dir.z * launch.horizontalSpeed());
+		player.hurtMarked = true; // 与击退同一条通道：让客户端把速度换成这一份
+		player.resetFallDistance();
+
+		// 收场：短杆整根倒伏（倒向与起跳方向相反 = 角动量守恒），长杆自顶向下散掉
+		if (pole.length > config.poleVaultToppleMaxLength) {
+			dissolve(pole);
+		} else {
+			release(pole, charge.dir.scale(-1.0D), config.poleVaultToppleNudge);
+		}
+
+		player.getCooldowns().addCooldown(player.getMainHandItem(),
+				Math.max(1, config.poleVaultCooldownTicks));
+		if (config.poleVaultCushionedLanding) {
+			CUSHION.put(player.getUUID(), new Cushion());
+		}
+
+		ServerLevel level = charge.world;
+		level.playSound(null, pole.base.x, pole.base.y, pole.base.z,
+				SoundEvents.BAMBOO_PLACE, SoundSource.PLAYERS, 1.0F, 1.4F);
+		level.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.TRIDENT_RIPTIDE_2, SoundSource.PLAYERS, 1.0F, 1.0F);
+
+		player.sendSystemMessage(Component.literal("§b[蓝银撑杆跳] §7蓄力 "
+				+ SelfTest.trim(charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND)
+				+ " s · 杆高 " + SelfTest.trim(pole.length)
+				+ " 格 · 腾空 " + SelfTest.trim(launch.apex()) + " 格！"), true);
+	}
+
 	// ------------------------------------------------------------ 杆的工具
 
 	/** 在世界里立一根杆（右键路径与自检共用）。 */
-	static Pole plant(ServerLevel level, Vec3 base, double length, Vec3 fallDir, double nudge) {
-		Pole pole = new Pole(level, base, length, fallDir, nudge);
+	static Pole plant(ServerLevel level, Vec3 base, double length) {
+		Pole pole = new Pole(level, base, length);
 		POLES.add(pole);
 		return pole;
+	}
+
+	/** 放手：把杆交给倒伏动画（短杆）。 */
+	static void release(Pole pole, Vec3 fallDir, double nudge) {
+		pole.released = true;
+		pole.fallDir = fallDir;
+		pole.omega = nudge;
+	}
+
+	/** 让杆自顶向下散掉（长杆的收场、以及蓄力中断）。 */
+	static void dissolve(Pole pole) {
+		pole.released = true;
+		pole.dissolve = Math.max(pole.dissolve, DISSOLVE_TICKS);
 	}
 
 	/** 当前立着的杆数量（自检用）。 */
@@ -348,28 +729,30 @@ public final class PoleVault {
 	private static boolean tipBlocked(Pole pole) {
 		Vec3 tip = pole.pointAt(0.97D);
 		BlockPos pos = BlockPos.containing(tip.x, tip.y, tip.z);
-		BlockState state = pole.level.getBlockState(pos);
-		return !state.getCollisionShape(pole.level, pos).isEmpty();
+		BlockState state = pole.world.getBlockState(pos);
+		return !state.getCollisionShape(pole.world, pos).isEmpty();
 	}
 
 	/** 沿杆撒「蓝银草」粒子：蓝（灵魂火）+ 银（末地烛），杆顶偶尔来一星电火花。 */
-	private static void emitParticles(Pole pole, EnchantsConfig config, double coverage) {
-		if (!config.enablePoleVaultParticles || pole.age % PARTICLE_INTERVAL != 0) {
+	private static void emitParticles(Pole pole, EnchantsConfig config, double visibleLength) {
+		if (!config.enablePoleVaultParticles || pole.age % PARTICLE_INTERVAL != 0
+				|| !(pole.length > 0.0D)) {
 			return;
 		}
 
-		ServerLevel world = pole.level;
-		int samples = Math.max(1, (int) Math.round(pole.length * 2.0D * Math.max(0.0D, coverage)));
+		ServerLevel world = pole.world;
+		double len = Math.max(0.0D, Math.min(visibleLength, pole.length));
+		int samples = Math.max(1, (int) Math.round(Math.min(len * 2.0D, MAX_PARTICLES)));
 		for (int i = 0; i <= samples; i++) {
-			Vec3 p = pole.pointAt((double) i / samples);
+			Vec3 p = pole.pointAt((double) i / samples * len / pole.length);
 			world.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, p.x, p.y, p.z, 1, 0.02D, 0.02D, 0.02D, 0.0D);
 			if (i % 2 == 0) {
 				world.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 1, 0.02D, 0.02D, 0.02D, 0.0D);
 			}
 		}
 
-		if (pole.age % (PARTICLE_INTERVAL * 4) == 0) {
-			Vec3 top = pole.pointAt(1.0D);
+		if (pole.age % (PARTICLE_INTERVAL * 2) == 0) {
+			Vec3 top = pole.pointAt(len / pole.length);
 			world.sendParticles(ParticleTypes.ELECTRIC_SPARK, top.x, top.y, top.z, 3,
 					0.12D, 0.12D, 0.12D, 0.01D);
 		}

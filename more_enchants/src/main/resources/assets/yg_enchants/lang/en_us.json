@@ -9,5 +9,6 @@
   "enchantment.yg.leech": "Leech",
   "enchantment.yg.swift": "Swift",
   "enchantment.yg.dread": "Dread",
-  "enchantment.yg.pole_vault": "Blue Silver Pole Vault"
+  "enchantment.yg.pole_vault": "Blue Silver Pole Vault",
+  "tag.item.yg.pole_vault": "Enchantable: Blue Silver Pole Vault"
 }

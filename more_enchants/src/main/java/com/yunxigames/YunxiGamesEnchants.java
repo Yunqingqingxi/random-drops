@@ -68,6 +68,8 @@ public class YunxiGamesEnchants implements ModInitializer {
 				ctx -> EnchantSelfTest.checkLibrarian(ctx.level, EnchantsConfig.get()));
 		SelfTest.registerStep("㊲ 蓝银撑杆跳·只认木棍+物理弧线+倒杆",
 				ctx -> EnchantSelfTest.checkPoleVault(ctx.level, EnchantsConfig.get()));
+		SelfTest.registerStep("㊳ 蓄力撑杆跳·生长+按档位顶碎方块",
+				ctx -> EnchantSelfTest.checkPoleVaultCharge(ctx.level, EnchantsConfig.get()));
 
 		LOGGER.info("[yg-enchants] 附魔模块已加载");
 	}

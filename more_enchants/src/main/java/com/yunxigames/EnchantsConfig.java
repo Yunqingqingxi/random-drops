@@ -182,26 +182,83 @@ public final class EnchantsConfig extends YgConfig {
 	/** 图书管理员每笔交易的代价物品数量上限（默认 3）。 */
 	public int librarianMaxCost = 3;
 
-	// --------------------------------------------- 蓝银撑杆跳（v1.1.0）
+	// --------------------------------------------- 蓝银撑杆跳（v1.1.0，v1.2.0 起可蓄力）
 
 	/**
 	 * <b>蓝银撑杆跳</b>（v1.1.0 新附魔，<b>只能附在木棍上</b>）总开关。
 	 *
-	 * <p>手持带本附魔的木棍右键：杆立在地上、人撑起来向前飞出去。关掉后右键无响应，
+	 * <p>手持带本附魔的木棍右键：立杆并开始蓄力（按住右键），松手起跳。关掉后右键无响应，
 	 * 内存里的杆也会立刻清空（它们本来就只是粒子，不留世界状态）。
 	 */
 	public boolean enablePoleVault = true;
 
-	/** 立杆高度上限（格，默认 5）：也就是「杆立起来 5 格高」；头顶净空不足时按净空缩短。 */
+	/**
+	 * <b>基础杆长</b>（格，默认 5）：也就是「一立起来就 5 格高」；头顶净空不足时按净空缩短。
+	 *
+	 * <p>v1.2.0 起这只是<b>起点</b>：蓄力会让杆继续往上长。
+	 */
 	public double poleVaultLength = 5.0D;
 
 	/**
-	 * 每级附魔额外提供的抬升高度（格/级，默认 1.5）。
+	 * <b>蓄力生长速度</b>（格/秒，默认 1.0）：每多蓄一秒，杆就再长这么高。
 	 *
-	 * <p>蓝银草杆是一根弹簧：蓄能来自助跑，回弹时把多余的功还给撑杆人。等级越高蓄得越多，
-	 * 但再高也翻不过自己撑的那根杆（见 {@code poleVaultLength} 的硬上限）。
+	 * <p>三个关键刻度（默认值下）：6 秒 ≈ 11 格、30 秒 ≈ 35 格、5 分钟 ≈ 305 格（先撞世界高度）。
 	 */
-	public double poleVaultApexPerLevel = 1.5D;
+	public double poleVaultGrowPerSecond = 1.0D;
+
+	/** 每高一级附魔额外的生长速度（格/秒/级，默认 0.5）：III 级是 I 级的两倍。 */
+	public double poleVaultGrowPerLevelExtra = 0.5D;
+
+	/**
+	 * <b>蓄力硬上限</b>（秒，默认 300 = 5 分钟）：到点自动起跳，不再往上长。
+	 *
+	 * <p>它同时是「绝对不会卡在蓄力状态里」的兜底 —— 万一客户端没把「放手」信号送上来，
+	 * 到点也会自己蹦出去。
+	 */
+	public double poleVaultMaxChargeSeconds = 300.0D;
+
+	/**
+	 * 能顶碎<b>易碎方块</b>（非石头类）所需的蓄力（秒，默认 6）。
+	 *
+	 * <p>「易碎」= 不属于 {@code #minecraft:mineable/pickaxe}、且硬度不超过
+	 * {@link #poleVaultFragileMaxHardness}：泥土、沙子、木头、树叶、玻璃、羊毛……
+	 */
+	public double poleVaultFragileSeconds = 6.0D;
+
+	/**
+	 * 能顶碎<b>石头类方块</b>所需的额外蓄力（秒，默认 30）。
+	 *
+	 * <p>石头类 = 属于 {@code #minecraft:mineable/pickaxe}（石头 / 圆石 / 深板岩 / 各种矿石…），
+	 * 且硬度不超过 {@link #poleVaultStoneMaxHardness}。黑曜石（50）、远古残骸（30）不在其列。
+	 */
+	public double poleVaultStoneSeconds = 30.0D;
+
+	/** 易碎档的硬度上限（默认 3.0）：木头/木板 2.0、陶瓦 1.25 都能碎。 */
+	public double poleVaultFragileMaxHardness = 3.0D;
+
+	/** 石头档的硬度上限（默认 5.0）：覆盖石头 1.5 与深板岩矿 4.5，挡下黑曜石 50。 */
+	public double poleVaultStoneMaxHardness = 5.0D;
+
+	/**
+	 * 顶碎的方块是否掉落物品（默认 true）。
+	 *
+	 * <p>关掉就是「粉碎」：一路渣都不剩。开着时按原版掉落走（掉落物会顺着杆往下掉）。
+	 */
+	public boolean poleVaultBreakDrops = true;
+
+	/**
+	 * 蓄力时人离杆底的最大距离（格，默认 4）：跑开就中断蓄力、杆就地散掉。
+	 *
+	 * <p>物理上说得通：手离开杆，力就传不上去了。
+	 */
+	public double poleVaultChargeMaxDistance = 4.0D;
+
+	/**
+	 * 超过这个长度的杆不再整根倒伏，而是自顶向下散掉（格，默认 24）。
+	 *
+	 * <p>长杆倒伏在物理上要花十几秒（α ∝ 1/L）且会横扫半个屏幕，不如让蓝银草自己散开。
+	 */
+	public double poleVaultToppleMaxLength = 24.0D;
 
 	/**
 	 * 助跑动能折算成高度的效率（默认 1.0 = 不设损耗）。
@@ -212,10 +269,10 @@ public final class EnchantsConfig extends YgConfig {
 	public double poleVaultRunUpEfficiency = 1.0D;
 
 	/**
-	 * 起跳所需的最小水平速度（格/刻，默认 0.15）。
+	 * 立杆（开始蓄力）所需的最小水平速度（格/刻，默认 0.15）。
 	 *
 	 * <p>参考：走路约 0.216、疾跑约 0.28。低于这个值撑不起来 —— 站着不动没有动量，
-	 * 物理上也跳不了撑杆跳。
+	 * 物理上也跳不了撑杆跳。注意判定发生在<b>立杆那一刻</b>：立杆后原地蓄力，动量存着，松手还给你。
 	 */
 	public double poleVaultMinRunUp = 0.15D;
 
@@ -225,8 +282,8 @@ public final class EnchantsConfig extends YgConfig {
 	/**
 	 * 撑杆跳自己的落地是否免摔落伤害（默认 true）。
 	 *
-	 * <p>拦的是「这一跳造成的下坠」：起跳后 {@code CUSHION_TICKS} 内、人在空中时把摔落距离按住
-	 * （fallDistance 是摔伤的唯一输入）。关掉就是硬核物理，从悬崖边撑出去自求多福。
+	 * <p>拦的是「这一跳造成的下坠」：起跳后一段时间内、人在空中时把摔落距离按住
+	 * （fallDistance 是摔伤的唯一输入）。关掉就是硬核物理 —— 蓄 5 分钟撑上去再摔下来，自求多福。
 	 */
 	public boolean poleVaultCushionedLanding = true;
 
@@ -358,12 +415,31 @@ public final class EnchantsConfig extends YgConfig {
 		if (librarianMaxCost < 1) librarianMaxCost = 3;
 		librarianMaxCost = Math.min(16, librarianMaxCost);
 
-		// ---- v1.1.0 蓝银撑杆跳 ----
-		// 杆长决定「杆多高」，也是起跳高度的硬上限，所以下界不能低于 2（否则立杆就没意义了）
+		// ---- v1.1.0 / v1.2.0 蓝银撑杆跳 ----
+		// 杆长是起跳高度的基准，下界不能低于 1（否则立杆就没意义了）
 		poleVaultLength = orDefaultIfNaN(poleVaultLength, 5.0D);
-		poleVaultLength = Math.min(16.0D, Math.max(2.0D, poleVaultLength));
-		poleVaultApexPerLevel = orDefaultIfNaN(poleVaultApexPerLevel, 1.5D);
-		poleVaultApexPerLevel = Math.min(8.0D, Math.max(0.0D, poleVaultApexPerLevel));
+		poleVaultLength = Math.min(64.0D, Math.max(1.0D, poleVaultLength));
+		poleVaultGrowPerSecond = orDefaultIfNaN(poleVaultGrowPerSecond, 1.0D);
+		poleVaultGrowPerSecond = Math.min(16.0D, Math.max(0.0D, poleVaultGrowPerSecond));
+		poleVaultGrowPerLevelExtra = orDefaultIfNaN(poleVaultGrowPerLevelExtra, 0.5D);
+		poleVaultGrowPerLevelExtra = Math.min(16.0D, Math.max(0.0D, poleVaultGrowPerLevelExtra));
+		poleVaultMaxChargeSeconds = orDefaultIfNaN(poleVaultMaxChargeSeconds, 300.0D);
+		poleVaultMaxChargeSeconds = Math.min(3600.0D, Math.max(1.0D, poleVaultMaxChargeSeconds));
+		// 易碎档在前、石头档在后：石头的门槛必须不早于易碎，否则「先碎木头再碎石头」的节奏会倒过来
+		poleVaultFragileSeconds = orDefaultIfNaN(poleVaultFragileSeconds, 6.0D);
+		poleVaultFragileSeconds = Math.min(600.0D, Math.max(0.0D, poleVaultFragileSeconds));
+		poleVaultStoneSeconds = orDefaultIfNaN(poleVaultStoneSeconds, 30.0D);
+		poleVaultStoneSeconds = Math.min(600.0D,
+				Math.max(poleVaultFragileSeconds, poleVaultStoneSeconds));
+		poleVaultFragileMaxHardness = orDefaultIfNaN(poleVaultFragileMaxHardness, 3.0D);
+		poleVaultFragileMaxHardness = Math.min(100.0D, Math.max(0.0D, poleVaultFragileMaxHardness));
+		poleVaultStoneMaxHardness = orDefaultIfNaN(poleVaultStoneMaxHardness, 5.0D);
+		poleVaultStoneMaxHardness = Math.min(100.0D,
+				Math.max(poleVaultFragileMaxHardness, poleVaultStoneMaxHardness));
+		poleVaultChargeMaxDistance = orDefaultIfNaN(poleVaultChargeMaxDistance, 4.0D);
+		poleVaultChargeMaxDistance = Math.min(32.0D, Math.max(0.5D, poleVaultChargeMaxDistance));
+		poleVaultToppleMaxLength = orDefaultIfNaN(poleVaultToppleMaxLength, 24.0D);
+		poleVaultToppleMaxLength = Math.min(1024.0D, Math.max(1.0D, poleVaultToppleMaxLength));
 		poleVaultRunUpEfficiency = orDefaultIfNaN(poleVaultRunUpEfficiency, 1.0D);
 		poleVaultRunUpEfficiency = Math.min(3.0D, Math.max(0.0D, poleVaultRunUpEfficiency));
 		poleVaultMinRunUp = orDefaultIfNaN(poleVaultMinRunUp, 0.15D);

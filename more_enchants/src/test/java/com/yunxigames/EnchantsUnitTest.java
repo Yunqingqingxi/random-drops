@@ -54,8 +54,16 @@ class EnchantsUnitTest {
 	@Test
 	void poleVaultFieldsAreClampedAndNaNGuarded() {
 		EnchantsConfig cfg = new EnchantsConfig();
-		cfg.poleVaultLength = Double.NaN;      // NaN 必须先回落默认值，再进 min/max 链
-		cfg.poleVaultApexPerLevel = -3.0D;
+		cfg.poleVaultLength = Double.NaN;        // NaN 必须先回落默认值，再进 min/max 链
+		cfg.poleVaultGrowPerSecond = Double.NaN;
+		cfg.poleVaultGrowPerLevelExtra = -1.0D;
+		cfg.poleVaultMaxChargeSeconds = Double.NaN;
+		cfg.poleVaultFragileSeconds = Double.NaN;
+		cfg.poleVaultStoneSeconds = -5.0D;
+		cfg.poleVaultFragileMaxHardness = -2.0D;
+		cfg.poleVaultStoneMaxHardness = -3.0D;
+		cfg.poleVaultChargeMaxDistance = -1.0D;
+		cfg.poleVaultToppleMaxLength = Double.NaN;
 		cfg.poleVaultRunUpEfficiency = 99.0D;
 		cfg.poleVaultMinRunUp = 5.0D;
 		cfg.poleVaultForwardRetain = -1.0D;
@@ -63,8 +71,16 @@ class EnchantsUnitTest {
 		cfg.poleVaultToppleNudge = Double.NaN;
 		cfg.validate();
 
-		assertEquals(5.0D, cfg.poleVaultLength, "NaN 杆长回落默认 5（杆长同时是起跳高度的硬上限）");
-		assertEquals(0.0D, cfg.poleVaultApexPerLevel, "负的弹性能钳到 0");
+		assertEquals(5.0D, cfg.poleVaultLength, "NaN 杆长回落默认 5");
+		assertEquals(1.0D, cfg.poleVaultGrowPerSecond, "NaN 生长速度回落默认 1 格/秒");
+		assertEquals(0.0D, cfg.poleVaultGrowPerLevelExtra, "负的等级加成钳到 0");
+		assertEquals(300.0D, cfg.poleVaultMaxChargeSeconds, "NaN 蓄力上限回落默认 5 分钟");
+		assertEquals(6.0D, cfg.poleVaultFragileSeconds, "NaN 易碎档回落默认 6 秒");
+		assertEquals(6.0D, cfg.poleVaultStoneSeconds, "石头档不得早于易碎档（-5 被抬到 6）");
+		assertEquals(0.0D, cfg.poleVaultFragileMaxHardness, "负硬度上限钳到 0");
+		assertEquals(0.0D, cfg.poleVaultStoneMaxHardness, "石头档硬度上限不得低于易碎档");
+		assertEquals(0.5D, cfg.poleVaultChargeMaxDistance, "负距离钳到下界 0.5");
+		assertEquals(24.0D, cfg.poleVaultToppleMaxLength, "NaN 倒伏长度上限回落默认 24");
 		assertEquals(3.0D, cfg.poleVaultRunUpEfficiency, "效率上界 3");
 		assertEquals(1.0D, cfg.poleVaultMinRunUp, "门槛上界 1.0 格/刻");
 		assertEquals(0.0D, cfg.poleVaultForwardRetain, "负的动量保留钳到 0");
@@ -77,7 +93,7 @@ class EnchantsUnitTest {
 		// 玩家速度理论上不会 NaN，但配置钳制链的历史坑就是「NaN 会穿透 min/max」，
 		// 这里把同一类防线钉在物理入口上：NaN 助跑速度既不能算出 NaN 高度，也不能放行
 		PoleVaultPhysics.Launch nan = PoleVaultPhysics.solveLaunch(
-				Double.NaN, 3, 5.0D, 1.5D, 1.0D, 0.15D, 1.0D);
+				Double.NaN, 5.0D, 1.0D, 0.15D, 1.0D);
 		assertTrue(nan.refused(), "NaN 速度必须判为「撑不起来」而不是放行");
 	}
 }

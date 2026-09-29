@@ -155,7 +155,7 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 | 类 | 所属 | 职责 |
 | --- | --- | --- |
 | `ModEnchantments` / `EnchantmentEffects` / `EnchantmentLevelUps` / `LibrarianTrades` | more_enchants | 自定义附魔解析 + 运行期效果（十一个附魔）/ 击杀升级 / 图书管理员 |
-| `PoleVault` / `PoleVaultPhysics` | more_enchants | 蓝银撑杆跳：右键立杆 + 起跳冲量 + 倒杆（纯数学校验层 `PoleVaultPhysics` 零 MC 依赖，可单测） |
+| `PoleVault` / `PoleVaultPhysics` | more_enchants | 蓝银撑杆跳：右键立杆 + 按住蓄力（蓝银草长高并顶碎挡路方块）+ 起跳冲量 + 倒杆/散开（纯数学校验层 `PoleVaultPhysics` 零 MC 依赖，可单测） |
 | `GlobalEvents` / `Bounties` | world_events | 全局事件调度（青蛙雨/陨石/雷池/血月/福到）+ Boss 条 HUD / 猎杀悬赏 |
 | `Bingos` | bingo | 双板集卡 + 地图绘制 + 连线判定 |
 | `mobs/PhantomSound` | more_mobs | 自定义音效的懒加载解析与播放（俯冲开始） |
@@ -236,6 +236,7 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 | 读玩家这一 tick 的位移（助跑速度） | `player.getDeltaMovement()`（服务端手上这份基本是空的） | `ServerPlayer#getKnownMovement()`（客户端上报的位移） |
 | 让附魔/物品只认某一种物品 | 指望铁砧拦（原版铁砧对附魔书**不做**兼容性检查） | 附魔 JSON 的 `supported_items` 指向自定义 tag（`data/<ns>/tags/item/<name>.json`），运行期再判一次物品；自检用 `Enchantment#canEnchant(ItemStack)` 正面钉死 |
 | 自检里 `addFreshEntity` 之后立刻用 `getEntities` 数它 | 数不到（`SERVER_STARTED` 时区块还没有 entity-ticking，计数查询有盲区） | 断言实体本身（返回值 / `isRemoved()` / 标签命中），**别拿计数当判据** |
+| 想知道「玩家什么时候松开了右键」之类的客户端输入 | 在 `minecraft-common-deobf-26.2.jar` 里找客户端逻辑（**里面没有 client 类**，会误判成「没有这个机制」） | 反编译 `minecraft-clientonly-deobf-26.2.jar`；「松手」可以完全走原版：服务端 `startUsingItem()` → 客户端 `isUsingItem() && !keyUse.isDown()` 发 `RELEASE_USE_ITEM` → 服务端 `handlePlayerAction` 清标志（延迟 ≤1 刻）。兜底：按住右键时客户端每 4 刻发一次 use 包，Fabric `UseItemCallback` 会被反复调用，断流即松手 |
 
 ### 26.2 客户端渲染 / 音效（只有 `mobs` 包会碰）
 

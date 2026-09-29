@@ -59,14 +59,19 @@ class EnchantsRegressionTest {
 	@Test
 	void missingPoleVaultFieldsFallBackToCodeDefaults() throws Exception {
 		// 老配置文件里没有蓝银撑杆跳那几项：布尔不能被 Gson 读成 false（玩法静默消失），
-		// 数值不能读成 0（杆长 0 会让整条钳制链钳到下界 2）
+		// 数值不能读成 0（杆长 0、生长 0、档位 0 秒都会让玩法直接失真）
 		Files.writeString(configDir.resolve(EnchantsConfig.FILE_NAME),
 				"{\"enableMagnet\": true}");
 		EnchantsConfig cfg = EnchantsConfig.load();
 		assertTrue(cfg.enablePoleVault, "缺项的撑杆跳总开关必须补回 true");
 		assertTrue(cfg.poleVaultCushionedLanding, "缺项的落地缓冲必须补回 true");
 		assertTrue(cfg.enablePoleVaultParticles, "缺项的粒子开关必须补回 true");
+		assertTrue(cfg.poleVaultBreakDrops, "缺项的顶碎掉落开关必须补回 true");
 		assertEquals(5.0D, cfg.poleVaultLength, "缺项杆长补回 5 格，而不是 0");
+		assertEquals(1.0D, cfg.poleVaultGrowPerSecond, "缺项生长速度补回 1 格/秒");
+		assertEquals(6.0D, cfg.poleVaultFragileSeconds, "缺项易碎档补回 6 秒");
+		assertEquals(30.0D, cfg.poleVaultStoneSeconds, "缺项石头档补回 30 秒");
+		assertEquals(300.0D, cfg.poleVaultMaxChargeSeconds, "缺项蓄力上限补回 5 分钟");
 		assertEquals(0.003D, cfg.poleVaultToppleNudge, 1.0E-12D, "缺项倒杆冲量补回代码默认");
 	}
 }

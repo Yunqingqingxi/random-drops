@@ -385,7 +385,7 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 		return level.getEntities((Entity) null, box,
 				e -> EnchantmentEffects.isUndead(e, level)).size();
 	}
-	// ------------------------------------------------------------ v1.1.0 蓝银撑杆跳
+	// ------------------------------------------------------------ v1.1.0 / v1.2.0 蓝银撑杆跳
 
 	/**
 	 * ㊲：蓝银撑杆跳 —— 附魔只认木棍 + 起跳解算的物理不变量 + 倒杆的数值积分 + 真杆的生命周期。
@@ -411,30 +411,48 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 		// 峰值反解：拿反解出来的初速再跑一遍积分器，必须正好落在预算高度上
 		double apexErr = Math.abs(PoleVaultPhysics.apexHeight(PoleVaultPhysics.vyForApex(3.0D)) - 3.0D);
 
-		double length = config.poleVaultLength;
-		PoleVaultPhysics.Launch sprint = PoleVaultPhysics.solveLaunch(0.28D, 3, length,
-				config.poleVaultApexPerLevel, config.poleVaultRunUpEfficiency,
-				config.poleVaultMinRunUp, config.poleVaultForwardRetain);
-		boolean capped = !sprint.refused()
-				&& sprint.apex() <= length - PoleVaultPhysics.HEADROOM + 1.0E-6D
-				&& PoleVaultPhysics.apexHeight(sprint.vy()) <= length - PoleVaultPhysics.HEADROOM + 1.0E-6D;
-		boolean momentum = !sprint.refused()
-				&& Math.abs(sprint.horizontalSpeed() - 0.28D * config.poleVaultForwardRetain) < 1.0E-9D;
-		boolean gated = PoleVaultPhysics.solveLaunch(0.0D, 3, length,
-				config.poleVaultApexPerLevel, config.poleVaultRunUpEfficiency,
-				config.poleVaultMinRunUp, config.poleVaultForwardRetain).refused();
+		// 蓄力 → 杆长：蓄得越久杆越长，且到硬上限就不再长（世界高度之外还有一道夹子在 PoleVault 里）
+		double len0 = PoleVaultPhysics.targetLength(config.poleVaultLength, 0, 3,
+				config.poleVaultGrowPerSecond, config.poleVaultGrowPerLevelExtra,
+				config.poleVaultMaxChargeSeconds);
+		double len6 = PoleVaultPhysics.targetLength(config.poleVaultLength, 120, 3,
+				config.poleVaultGrowPerSecond, config.poleVaultGrowPerLevelExtra,
+				config.poleVaultMaxChargeSeconds);
+		double lenCap = PoleVaultPhysics.targetLength(config.poleVaultLength,
+				PoleVault.maxChargeTicks(config), 3,
+				config.poleVaultGrowPerSecond, config.poleVaultGrowPerLevelExtra,
+				config.poleVaultMaxChargeSeconds);
+		double lenOver = PoleVaultPhysics.targetLength(config.poleVaultLength,
+				PoleVault.maxChargeTicks(config) * 10, 3,
+				config.poleVaultGrowPerSecond, config.poleVaultGrowPerLevelExtra,
+				config.poleVaultMaxChargeSeconds);
+		boolean grows = len6 > len0 && lenCap > len6;
+		boolean chargeCapped = Math.abs(lenOver - lenCap) < 1.0E-9D;
+
+		// 起跳解算：无高度上限（300 格杆 → 299 格以上的峰值）+ 动量守恒 + 助跑门槛
+		double poleLength = 300.0D;
+		PoleVaultPhysics.Launch far = PoleVaultPhysics.solveLaunch(0.28D, poleLength,
+				config.poleVaultRunUpEfficiency, config.poleVaultMinRunUp, config.poleVaultForwardRetain);
+		boolean unbounded = !far.refused() && far.apex() >= poleLength - PoleVaultPhysics.HEADROOM
+				&& PoleVaultPhysics.apexHeight(far.vy()) >= poleLength - PoleVaultPhysics.HEADROOM;
+		boolean momentum = !far.refused()
+				&& Math.abs(far.horizontalSpeed() - 0.28D * config.poleVaultForwardRetain) < 1.0E-9D;
+		boolean gated = PoleVaultPhysics.solveLaunch(0.0D, poleLength,
+				config.poleVaultRunUpEfficiency, config.poleVaultMinRunUp,
+				config.poleVaultForwardRetain).refused();
 
 		// 倒杆：数值积分到倒平，末角速度要落在能量守恒解析解 √(3g/L) 附近
+		double toppleLength = config.poleVaultLength;
 		double tilt = 0.0D;
 		double omega = config.poleVaultToppleNudge;
 		int toppleTicks = 0;
 		while (tilt < Math.PI / 2.0D - 1.0E-9D && toppleTicks < 600) {
-			double[] next = PoleVaultPhysics.stepTopple(tilt, omega, length, Math.PI / 2.0D);
+			double[] next = PoleVaultPhysics.stepTopple(tilt, omega, toppleLength, Math.PI / 2.0D);
 			tilt = next[0];
 			omega = next[1];
 			toppleTicks++;
 		}
-		double analytic = PoleVaultPhysics.rodImpactOmega(length);
+		double analytic = PoleVaultPhysics.rodImpactOmega(toppleLength);
 		boolean toppled = tilt >= Math.PI / 2.0D - 1.0E-9D
 				&& Math.abs(omega - analytic) < analytic * 0.2D;
 
@@ -451,26 +469,138 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 
 		// 真杆的生命周期：立一根 → 逐刻推进 → 必须自己倒平并消失（世界里不留任何东西）
 		int before = PoleVault.poleCount();
-		PoleVault.plant(level, new Vec3(column.getX() + 0.5D, column.getY(), column.getZ() + 0.5D),
-				length, new Vec3(0.0D, 0.0D, -1.0D), config.poleVaultToppleNudge);
+		PoleVault.Pole testPole = PoleVault.plant(level,
+				new Vec3(column.getX() + 0.5D, column.getY(), column.getZ() + 0.5D), toppleLength);
+		PoleVault.release(testPole, new Vec3(0.0D, 0.0D, -1.0D), config.poleVaultToppleNudge);
 		int planted = PoleVault.poleCount();
 		int ticksRun = 0;
-		while (PoleVault.poleCount() > 0 && ticksRun < 600) {
+		while (PoleVault.poleCount() > 0 && ticksRun < 900) {
 			PoleVault.tickPoles(config);
 			ticksRun++;
 		}
 		boolean lifeCycle = before == 0 && planted == 1 && PoleVault.poleCount() == 0;
 
 		check("㊲ 蓝银撑杆跳·只认木棍+物理弧线+倒杆",
-				registered && stickOnly && apexErr < 0.01D && capped && momentum && gated
-						&& toppled && clearanceOk && lifeCycle,
+				registered && stickOnly && apexErr < 0.01D && grows && chargeCapped && unbounded
+						&& momentum && gated && toppled && clearanceOk && lifeCycle,
 				"注册=" + registered + " 只认木棍=" + stickOnly
 						+ "；峰值反解误差=" + SelfTest.trim(apexErr)
-						+ " 杆顶封顶=" + capped + " 动量守恒=" + momentum + " 助跑门槛=" + gated
+						+ " 蓄力生长=" + grows + "（0s→" + SelfTest.trim(len0)
+						+ " 格，6s→" + SelfTest.trim(len6)
+						+ "，满→" + SelfTest.trim(lenCap) + "）"
+						+ " 蓄力封顶=" + chargeCapped
+						+ " 无高度上限=" + unbounded + "（" + SelfTest.trim(poleLength)
+						+ " 格杆→" + SelfTest.trim(far.apex()) + " 格）"
+						+ " 动量守恒=" + momentum + " 助跑门槛=" + gated
 						+ "；倒平 " + toppleTicks + " 刻，末角速度 " + SelfTest.trim(omega)
 						+ "（解析 " + SelfTest.trim(analytic) + "）"
 						+ "；3 格天花板净空=" + clearance
 						+ "；杆生命周期 " + planted + "→" + PoleVault.poleCount() + "（" + ticksRun + " 刻）");
+	}
+
+	/**
+	 * ㊳：蓄力撑杆跳 —— 蓄力让杆长高、按档位顶碎挡路的方块、顶不动的就停住。
+	 *
+	 * <p>在世界里真搭一根「泥土 → 石头 → 黑曜石」的测试柱，直接喂不同的蓄力刻数跑生长：
+	 * 这条链路（生长 → 查 tag/hardness → 破坏方块 → 长上去）只有真世界能验。
+	 */
+	static void checkPoleVaultCharge(ServerLevel level, EnchantsConfig config) {
+		// 测试柱：index 1 = 泥土（易碎）、2 = 石头（石头类）、3 = 黑曜石（顶不动）
+		BlockPos col = level.getHeightmapPos(
+				Heightmap.Types.MOTION_BLOCKING, new BlockPos(-24, 64, -24));
+		for (int i = 0; i < 8; i++) {
+			level.setBlock(col.above(i), Blocks.AIR.defaultBlockState(), 2);
+		}
+		level.setBlock(col.above(1), Blocks.DIRT.defaultBlockState(), 2);
+		level.setBlock(col.above(2), Blocks.STONE.defaultBlockState(), 2);
+		level.setBlock(col.above(3), Blocks.OBSIDIAN.defaultBlockState(), 2);
+
+		// 自检不留一地掉落物：只验「方块碎没碎」，掉落走的是原版 destroyBlock
+		boolean savedDrops = config.poleVaultBreakDrops;
+		config.poleVaultBreakDrops = false;
+
+		double len0;
+		double lenFragile;
+		double lenStone;
+		boolean stoppedAtDirt;
+		boolean brokeDirt;
+		boolean heldByStone;
+		boolean brokeStone;
+		boolean heldByObsidian;
+		int fragileTicks = (int) Math.ceil(config.poleVaultFragileSeconds * 20.0D) + 20;
+		int stoneTicks = (int) Math.ceil(config.poleVaultStoneSeconds * 20.0D) + 20;
+		PoleVault.Pole pole;
+		try {
+			Vec3 base = new Vec3(col.getX() + 0.5D, col.getY(), col.getZ() + 0.5D);
+			pole = PoleVault.plant(level, base, 1.0D);
+
+			// 逐刻喂（和生产的 tickCharges 同一条路径）：growTo 每刻只推进「一 tick 的生长量」，
+			// 一次调用长不完一整段 —— 这本来就是刻意的（杆是一格一格长上去的，不能瞬移）
+			len0 = 1.0D;
+			lenFragile = 1.0D;
+			stoppedAtDirt = false;
+			brokeDirt = false;
+			heldByStone = false;
+			for (int t = 0; t <= stoneTicks; t++) {
+				PoleVault.growTo(pole, t, 3, null, config);
+
+				// 零蓄力：什么都顶不碎，杆停在泥土下面
+				if (t == 0) {
+					len0 = pole.length;
+					stoppedAtDirt = len0 < 2.0D
+							&& level.getBlockState(col.above(1)).getBlock() == Blocks.DIRT;
+				}
+
+				// 刚过易碎档（默认 6 秒）：顶碎泥土，但顶不动石头
+				if (t == fragileTicks) {
+					lenFragile = pole.length;
+					brokeDirt = level.getBlockState(col.above(1)).isAir();
+					heldByStone = level.getBlockState(col.above(2)).getBlock() == Blocks.STONE
+							&& lenFragile < 3.0D;
+				}
+			}
+
+			// 过了石头档（默认 30 秒）：顶碎石头，但黑曜石纹丝不动
+			lenStone = pole.length;
+			brokeStone = level.getBlockState(col.above(2)).isAir();
+			heldByObsidian = level.getBlockState(col.above(3)).getBlock() == Blocks.OBSIDIAN
+					&& lenStone < 4.0D;
+		} finally {
+			config.poleVaultBreakDrops = savedDrops;
+		}
+
+		// 基岩那类「负硬度」永远顶不动（纯判定，不用真去摆基岩）
+		boolean bedrockSafe = !PoleVaultPhysics.canBreakAt(600.0D, true, -1.0F,
+				config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
+				config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness);
+		// 蓄力没到 6 秒时，连泥土也不该碎
+		boolean earlySafe = !PoleVaultPhysics.canBreakAt(
+				Math.max(0.0D, config.poleVaultFragileSeconds - 0.5D), false, 0.5F,
+				config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
+				config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness);
+
+		// 清理：方块复原 + 杆自己散掉
+		for (int i = 0; i < 8; i++) {
+			level.setBlock(col.above(i), Blocks.AIR.defaultBlockState(), 2);
+		}
+		PoleVault.dissolve(pole);
+		int ticksRun = 0;
+		while (PoleVault.poleCount() > 0 && ticksRun < 900) {
+			PoleVault.tickPoles(config);
+			ticksRun++;
+		}
+		boolean cleaned = PoleVault.poleCount() == 0;
+
+		check("㊳ 蓄力撑杆跳·生长+按档位顶碎方块",
+				stoppedAtDirt && brokeDirt && heldByStone && brokeStone && heldByObsidian
+						&& bedrockSafe && earlySafe && cleaned,
+				"0s 停在泥土下=" + stoppedAtDirt + "（长 " + SelfTest.trim(len0) + " 格）"
+						+ "；过易碎档 顶碎泥土=" + brokeDirt + " 被石头挡住=" + heldByStone
+						+ "（长 " + SelfTest.trim(lenFragile) + " 格）"
+						+ "；过石头档 顶碎石头=" + brokeStone + " 被黑曜石挡住=" + heldByObsidian
+						+ "（长 " + SelfTest.trim(lenStone) + " 格）"
+						+ "；负硬度顶不动=" + bedrockSafe + " 未到档不顶=" + earlySafe
+						+ "；杆自己散掉=" + cleaned + "（" + ticksRun + " 刻）");
 	}
 
 	// ------------------------------------------------------------ v1.12.0 附魔突破 + 全局事件
