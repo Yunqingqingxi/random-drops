@@ -7,7 +7,7 @@
 
 ## 1. 项目概览
 
-**yunxigames** 是 Minecraft 26.2 的 Fabric **玩法包系列**：一个仓库、**五个完全独立的 gradle 项目**（非聚合）、五份 jar。
+**yunxigames** 是 Minecraft 26.2 的 Fabric **玩法包系列**：一个仓库、**六个完全独立的 gradle 项目**（非聚合）、六份 jar。
 每个项目**自包含**（同名基础类各持一份源码副本）、零跨包依赖，可单独安装、任意组合；
 每个项目有自己的 `settings.gradle` / `build.gradle` / `gradle.properties`（**独立版本号**）/ gradle wrapper，
 `cd <项目> && ./gradlew build` 即可单独构建，互不影响。
@@ -19,6 +19,7 @@
 | 事件 / 悬赏 | `world_events/` | `yg_events` | `yg-events` | `config/yg-events.json` | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）、猎杀悬赏、Boss 条 HUD |
 | Bingo | `bingo/` | `yg_bingo` | `yg-bingo` | `config/yg-bingo.json` | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
 | 更多生物 | `more_mobs/` | `yg_mobs` | `yg-mobs` | `config/yg-mobs.json` | 「苦力怕幻翼」：幻翼保留原生翅膀 / 尾巴 / 飞行姿态 / 眼睛层，头与躯干换成苦力怕；俯冲命中爆炸 + 俯冲开始播自定义音效 |
+| 随机换位 | `random_swap/` | `yg_swap` | `yg-swap` | `config/yg-swap.json` | 受伤随机互换位置：受伤后按概率（默认 15%）与附近随机活体互换，落点保护（岩浆/火跳过、清摔落、排除骑乘/盔甲架/Boss 黑名单），AFTER_DAMAGE 事件、零状态 |
 
 - **根目录不是 gradle 构建**：根只有本文档、`README.md`、`AI_ONBOARDING.md`、`LICENSE` 和五个项目目录。
   任何 gradle 命令都要先 `cd` 进对应项目；仓库根没有 `gradlew`。
@@ -86,7 +87,7 @@ git checkout 26.2
 
 ```bash
 # ⚠️ 五个项目互相独立，所有 gradle 命令先 cd 进对应项目目录：
-cd random_drops    # 或 more_enchants / world_events / bingo / more_mobs（工具：more_mobs/mobkit）
+cd random_drops    # 或 more_enchants / world_events / bingo / more_mobs / random_swap（工具：more_mobs/mobkit）
 
 # 编译检查（开发期每个功能写完就跑，~20 秒）
 ./gradlew compileJava --offline

@@ -1,6 +1,6 @@
 # yunxigames — Minecraft 26.2 玩法包系列
 
-**一个系列，五个玩法包，五份 jar**。每个包自包含、按需安装 —— 装哪个玩哪个，包与包之间**零硬依赖**。
+**一个系列，六个玩法包，六份 jar**。每个包自包含、按需安装 —— 装哪个玩哪个，包与包之间**零硬依赖**。
 
 仓库是**五个完全独立的 gradle 项目**（非聚合）：每个项目有自己的构建脚本和**独立版本号**，
 `cd <项目> && ./gradlew build` 即可单独构建；mod id / jar 名 / 配置文件跨项目保持稳定。
@@ -12,6 +12,7 @@
 | **事件 / 悬赏** | `world_events/` | `yg-events-<版本>.jar` / `yg_events` | [world_events/README.md](world_events/README.md) | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）+ 猎杀悬赏 + Boss 条 HUD |
 | **Bingo** | `bingo/` | `yg-bingo-<版本>.jar` / `yg_bingo` | [bingo/README.md](bingo/README.md) | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
 | **更多生物** | `more_mobs/` | `yg-mobs-<版本>.jar` / `yg_mobs` | [more_mobs/README.md](more_mobs/README.md) | 「苦力怕幻翼」—— 幻翼的翅膀 / 尾巴 / 飞行姿态全保留，头与躯干换成苦力怕，俯冲命中爆炸 + 自定义俯冲音效 |
+| **随机换位** | `random_swap/` | `yg-swap-<版本>.jar` / `yg_swap` | [random_swap/README.md](random_swap/README.md) | 受伤随机互换位置：每次受伤按概率与附近一个随机生物（或玩家）瞬间互换，自带落点保护与黑名单 |
 
 每包自带：
 
