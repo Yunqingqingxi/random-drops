@@ -88,8 +88,8 @@
 
 ## 四、自检
 
-把**本包自己 run 目录**里那份配置（`mobs/run/config/yg-mobs.json`）的 `selfTestRolls` 设成 `200`，
-然后 `./gradlew :mobs:runServer --offline`，开服时本包会跑这 5 项：
+把**本包自己 run 目录**里那份配置（`run/config/yg-mobs.json`）的 `selfTestRolls` 设成 `200`，
+然后 `./gradlew runServer --offline`，开服时本包会跑这 5 项：
 
 | 编号 | 检查内容 |
 | --- | --- |

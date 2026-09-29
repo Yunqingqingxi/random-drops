@@ -7,16 +7,43 @@
 
 ## 1. 项目概览
 
-**yunxigames** 是 Minecraft 26.2 的 Fabric **玩法包系列**：一个仓库、五个玩法包、五份 jar。
-每个包**自包含**（同名基础类各持一份源码副本）、零跨包硬依赖，可单独安装、任意组合。
+**yunxigames** 是 Minecraft 26.2 的 Fabric **玩法包系列**：一个仓库、**五个完全独立的 gradle 项目**（非聚合）、五份 jar。
+每个项目**自包含**（同名基础类各持一份源码副本）、零跨包依赖，可单独安装、任意组合；
+每个项目有自己的 `settings.gradle` / `build.gradle` / `gradle.properties`（**独立版本号**）/ gradle wrapper，
+`cd <项目> && ./gradlew build` 即可单独构建，互不影响。
 
-| 玩法包 | 子项目 | mod id | 配置文件 | 内容 |
-| --- | --- | --- | --- | --- |
-| 随机掉落 | `drops/` | `yg_drops` | `config/yg-drops.json` | 掉落随机化引擎（物品 67% / 生物 8% / 空 25%）、暴击宝藏池、保底、精英怪、击杀赌注、进度 / 维度 / 群系调概率、末影龙通关结算、五组地面规则、`/yg` 命令 |
-| 更多附魔 | `enchants/` | `yg_enchants` | `config/yg-enchants.json` | 十个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重与易碎诅咒 / 汲取 / 疾风 / 威压）、击杀升级、图书管理员重做 |
-| 事件 / 悬赏 | `events/` | `yg_events` | `config/yg-events.json` | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）、猎杀悬赏、Boss 条 HUD |
-| Bingo | `bingo/` | `yg_bingo` | `config/yg-bingo.json` | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
-| 更多生物 | `mobs/` | `yg_mobs` | `config/yg-mobs.json` | 「苦力怕幻翼」：幻翼保留原生翅膀 / 尾巴 / 飞行姿态 / 眼睛层，头与躯干换成苦力怕；俯冲命中爆炸 + 俯冲开始播自定义音效 |
+| 玩法包 | 项目目录 | mod id | jar | 配置文件 | 内容 |
+| --- | --- | --- | --- | --- | --- |
+| 随机掉落 | `random_drops/` | `yg_drops` | `yg-drops` | `config/yg-drops.json` | 掉落随机化引擎（物品 67% / 生物 8% / 空 25%）、暴击宝藏池、保底、精英怪、击杀赌注、进度 / 维度 / 群系调概率、末影龙通关结算、五组地面规则、`/yg` 命令 |
+| 更多附魔 | `more_enchants/` | `yg_enchants` | `yg-enchants` | `config/yg-enchants.json` | 十个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重与易碎诅咒 / 汲取 / 疾风 / 威压）、击杀升级、图书管理员重做 |
+| 事件 / 悬赏 | `world_events/` | `yg_events` | `yg-events` | `config/yg-events.json` | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）、猎杀悬赏、Boss 条 HUD |
+| Bingo | `bingo/` | `yg_bingo` | `yg-bingo` | `config/yg-bingo.json` | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
+| 更多生物 | `more_mobs/` | `yg_mobs` | `yg-mobs` | `config/yg-mobs.json` | 「苦力怕幻翼」：幻翼保留原生翅膀 / 尾巴 / 飞行姿态 / 眼睛层，头与躯干换成苦力怕；俯冲命中爆炸 + 俯冲开始播自定义音效 |
+
+- **根目录不是 gradle 构建**：根只有本文档、`README.md`、`AI_ONBOARDING.md`、`LICENSE` 和五个项目目录。
+  任何 gradle 命令都要先 `cd` 进对应项目；仓库根没有 `gradlew`。
+- **`more_mobs/mobkit/`**：生物外观预览工具（开发期专用，不发布）。它是**另一个独立 gradle 构建**
+  （不是 more_mobs 的子项目），靠 `../build/libs/yg-mobs-<版本>.jar` 拿模型类；
+  more_mobs 升版本时要同步改 `more_mobs/mobkit/gradle.properties` 的 `mobs_version`。
+- **`more_mobs/assets/`** 是**参考素材**（原版贴图副本），**不在资源路径上、不进 jar**；
+  绝不能把它加进 `sourceSets`——那是「覆盖 assets/minecraft」事故的引线（见 §4）。
+- **mod id / jar 名 / 配置文件名跨项目保持稳定**（`yg_*` / `yg-<包>` / `yg-<包>.json`）：
+  目录名可以改玩法语义名，这三样一改就断已发布版本的兼容。
+
+**第三方 mod 兼容设计约定**（设计任何新玩法前先对照）：
+
+1. **注册表动态扫描，不硬编码名单**：物品 / 实体 / 药水 / 效果池一律运行时扫
+   `BuiltInRegistries`（如 `BuiltInRegistries.ITEM.stream()`），别人 mod 加的物品、生物、
+   附魔会**自动进池**，无需本系列做适配；
+2. **过滤用 `Identifier` 命名空间 + tag，不做类型假设**：黑名单按 `modid:` 前缀或
+   `#tag` 可配置（写进本包 Config），判断走 tag / 注册表，不 `instanceof` 原版物品类；
+3. **数据包资源 merge 不覆盖**：自定义 tag / 附魔 JSON 放**自己的** `data/<id>/`，
+   需要挂原版 tag（如 `curse`）时放 `data/minecraft/tags/...`（tag 天然 merge）；
+   **永远不覆盖 `assets/minecraft/**`**；
+4. **ItemStack / 实体处理保持通用**：写 NBT、拿 id、比标签都用注册表 API，
+   `makeStack` 式构造对 modded 物品同样成立；
+5. **新功能必须回答**：「装了『更多物品』类 mod 后，它的东西会不会进我的池子？会不会崩？」
+   ——答案必须是「自动进、不崩」，否则回到第 1 条重写。
 
 **三条不可动摇的设计底线**（改功能前先对照）：
 
@@ -58,31 +85,34 @@ git checkout 26.2
 ```
 
 ```bash
+# ⚠️ 五个项目互相独立，所有 gradle 命令先 cd 进对应项目目录：
+cd random_drops    # 或 more_enchants / world_events / bingo / more_mobs（工具：more_mobs/mobkit）
+
 # 编译检查（开发期每个功能写完就跑，~20 秒）
 ./gradlew compileJava --offline
 
-# 只编某一个包（推荐：改哪个包编哪个，快）
-./gradlew :mobs:compileJava :mobs:compileClientJava --offline
+# more_mobs 是拆分源集项目，改了客户端代码连客户端源集一起编
+./gradlew compileJava compileClientJava --offline
 
 # 真服务器自检（见第 6 节的完整流程，~8 分钟）
-# ⚠️ 工作目录是「子项目自己的 run/」，所以跑哪个包要指定哪个包的任务
-JAVA_HOME='D:\Java\jdk-25' ./gradlew :drops:runServer --offline > selftest-<版本>.log 2>&1
+JAVA_HOME='D:\Java\jdk-25' ./gradlew runServer --offline > selftest-<版本>.log 2>&1
 
-# 打包（五个 jar 各自落在 <包名>/build/libs/）
+# 打包（jar 落在本项目 build/libs/）
 JAVA_HOME='D:\Java\jdk-25' ./gradlew build --offline
+
+# mobkit 外观预览（先确保上层 more_mobs build 出过 jar，版本与 mobs_version 一致）
+cd more_mobs && ./gradlew build --offline
+cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 ```
 
 - 编译 `compileJava` 不强制 JAVA_HOME（走 `options.release = 24` 工具链），
   但 **runServer / build 建议都带上** `JAVA_HOME='D:\Java\jdk-25'`；
-- **多子项目下 loom 的 runServer 工作目录是「跑的那个子项目自己的 `run/`」** ——
-  跑 `:mobs:runServer` 就是 `mobs/run/`，跑 `:drops:runServer` 就是 `drops/run/`；
-  既不是仓库根，也不是根下那个 `run/`。`eula.txt`、`config/`、`mods/`、`world/` 都在对应子项目里。
-  **每个子项目要单独同意一次 EULA**（首次跑会自动生成 `eula=false`，改成 `true` 再跑）；
-  **配置也只读该子项目 `run/config/` 下的那份** —— 想让某个包跑自检，要改的是它自己 run 目录里的 json，
-  改 `drops/run/` 对 `:mobs:runServer` 没有任何作用（这个坑 2026-09-24 实际踩过一次）。
-  根目录那个 `run/` 是拆分之前的遗留（已被 `.gitignore` 忽略），不要误用；
+- **loom 的 runServer 工作目录是「本项目自己的 `run/`」**：
+  在 `random_drops/` 里跑就是 `random_drops/run/`。`eula.txt`、`config/`、`mods/`、`world/` 都在里面；
+  **每个项目要单独同意一次 EULA**（首次跑会自动生成 `eula=false`，改成 `true` 再跑）；
+  配置也只读本项目 `run/config/` 下的那份 json；
 - 跑完 runServer 记得确认 java 进程已退出，否则 `run/` 目录被锁，后续命令全部失败；
-- 服务器未同意 EULA 前无法启动：`drops/run/eula.txt` 里 `eula=true`。
+- 仓库根那个 `run/` 是聚合时代（2026-09-29 拆分前）的遗留（已被 `.gitignore` 忽略），不要误用。
 
 
 ---
@@ -105,7 +135,7 @@ JAVA_HOME='D:\Java\jdk-25' ./gradlew build --offline
 | `SessionStats` | 本局战绩（自检期间自动暂停） |
 | `LootSupply` | 随机物品供给（全量物品池 / 宝藏池 / 抽样），drops 之外三个包各带一份 |
 
-### `drops/`（最大的一包）
+### `random_drops/`（最大的一包）
 
 | 类 | 职责 |
 | --- | --- |
@@ -117,27 +147,28 @@ JAVA_HOME='D:\Java\jdk-25' ./gradlew build --offline
 | `KillEffects` / `MobStun` / `Feedback` / `DropTally` | 击杀药水赌注 / 落地僵直 / 反馈演出 / 统计 |
 | `command/YunxiGamesCommand` | `/yg` 命令（其它包不自带命令） |
 | `DropsSelfTest` | 本包自检（①~⑮ + ⑰ + ㉙ ㉝ ㉟） |
-| mixin（`drops/src/main/java/com/yunxigames/drops/mixin/`） | 方块掉落、实体合并、摔落伤害的注入点 |
+| mixin（`random_drops/src/main/java/com/yunxigames/drops/mixin/`） | 方块掉落、实体合并、摔落伤害的注入点 |
 
-### `enchants/` / `events/` / `bingo/` / `mobs/`
+### `more_enchants/` / `world_events/` / `bingo/` / `more_mobs/`
 
 | 类 | 所属 | 职责 |
 | --- | --- | --- |
-| `ModEnchantments` / `EnchantmentEffects` / `EnchantmentLevelUps` / `LibrarianTrades` | enchants | 自定义附魔解析 + 运行期效果（十个附魔）/ 击杀升级 / 图书管理员 |
-| `GlobalEvents` / `Bounties` | events | 全局事件调度（青蛙雨/陨石/雷池/血月/福到）+ Boss 条 HUD / 猎杀悬赏 |
+| `ModEnchantments` / `EnchantmentEffects` / `EnchantmentLevelUps` / `LibrarianTrades` | more_enchants | 自定义附魔解析 + 运行期效果（十个附魔）/ 击杀升级 / 图书管理员 |
+| `GlobalEvents` / `Bounties` | world_events | 全局事件调度（青蛙雨/陨石/雷池/血月/福到）+ Boss 条 HUD / 猎杀悬赏 |
 | `Bingos` | bingo | 双板集卡 + 地图绘制 + 连线判定 |
-| `mobs/PhantomSound` | mobs | 自定义音效的懒加载解析与播放（俯冲开始） |
-| `PhantomCreeperMixin` | mobs | **服务端**：幻翼俯冲命中引发苦力怕爆炸（挂 `Mob#doHurtTarget` + `instanceof Phantom` 过滤） |
-| `PhantomSweepSoundMixin` | mobs | **服务端**：俯冲开始播自定义音效（挂内部类 `Phantom$PhantomSweepAttackGoal`） |
-| `PhantomCreeperModel` / `PhantomCreeperRenderer` / `YunxiGamesMobsClient` | mobs（client 源集） | **客户端**：翅膀/尾巴用原生幻翼、头身用苦力怕（见 `mobs/README.md`） |
+| `mobs/PhantomSound` | more_mobs | 自定义音效的懒加载解析与播放（俯冲开始） |
+| `PhantomCreeperMixin` | more_mobs | **服务端**：幻翼俯冲命中引发苦力怕爆炸（挂 `Mob#doHurtTarget` + `instanceof Phantom` 过滤） |
+| `PhantomSweepSoundMixin` | more_mobs | **服务端**：俯冲开始播自定义音效（挂内部类 `Phantom$PhantomSweepAttackGoal`） |
+| `PhantomCreeperModel` / `PhantomCreeperRenderer` / `YunxiGamesMobsClient` | more_mobs（client 源集） | **客户端**：翅膀/尾巴用原生幻翼、头身用苦力怕（见 `more_mobs/README.md`） |
 
-- **附魔 JSON**：`enchants/src/main/resources/data/yg/enchantment/*.json`（数据包定义）；
+- **附魔 JSON**：`more_enchants/src/main/resources/data/yg/enchantment/*.json`（数据包定义）；
 - **诅咒红字**：26.2 无 `curse` json 字段，靠 `data/minecraft/tags/enchantment/curse.json` 附魔标签；
-- **客户端源集**：只有 `mobs` 有 `src/client/java` —— 需要在 `build.gradle` 里
+- **客户端源集**：只有 `more_mobs` 有 `src/client/java` —— 需要在 `build.gradle` 里
   `loom { splitEnvironmentSourceSets() }`、mods 声明两个源集、并 `jar { from sourceSets.client.output }`
   （**客户端资源不会自动进 jar**，漏了就静默缺贴图）；
 - **不要覆盖 `assets/minecraft/**`**：那会连原版资源一起改掉（曾经的 phantom 贴图事故），
-  自定义资源一律放 `assets/<自己的 mod id>/**`。
+  自定义资源一律放 `assets/<自己的 mod id>/**`。`more_mobs/assets/`（参考素材目录）不在资源路径上，
+  不要把它挂进 `sourceSets`。
 
 ---
 
@@ -159,9 +190,9 @@ JAVA_HOME='D:\Java\jdk-25' ./gradlew build --offline
 - **不写单元测试**。掉落/实体/爆炸/属性全要真服务器，mock 测不出「真的能用」；
 - **批量开发新功能时只跑 `compileJava --offline`**，攒一批做完后**统一跑一次 runServer 自检**；
   单点 bug 修复可顺手跑一次自检确认；
-- **自检完整流程**：
-  1. 把**要测的那个包的**配置 `<包名>/run/config/yg-<包名>.json` 里 `selfTestRolls` 改成 `200`；
-  2. `JAVA_HOME='D:\Java\jdk-25' ./gradlew :<包名>:runServer --offline > selftest-<版本>.log 2>&1`；
+- **自检完整流程**（在**目标项目目录里**执行）：
+  1. 把本项目 `run/config/yg-<包名>.json` 里 `selfTestRolls` 改成 `200`；
+  2. `JAVA_HOME='D:\Java\jdk-25' ./gradlew runServer --offline > selftest-<版本>.log 2>&1`；
   3. 等 `===== 自检结束：N 项全部通过 =====`，逐项核对；
   4. **把 `selfTestRolls` 改回 `0`**（别提交带 200 的配置）；
   5. 自检完 runServer 不会自己退出（空转 pausing），手动结束进程；
@@ -217,14 +248,14 @@ JAR=$(cygpath -w "C:\Users\Y1116\.gradle\caches\fabric-loom\minecraftMaven\net\m
 
 ## 8. 版本与提交规范
 
-1. **发版流程**：功能做完 → 自检全绿 → `gradle.properties` 的 `version` bump
-   （三段语义化：功能+1 的 minor，修复+1 的 patch；**五包共用一个版本号**）→ `build --offline`
-   （产物是**五份** jar）→ 更新根 `README.md`（系列更新记录）与**改动的那个包的** `README.md`
+1. **发版流程**：功能做完 → 自检全绿 → **本项目** `gradle.properties` 的 `mod_version` bump
+   （三段语义化：功能+1 的 minor，修复+1 的 patch；**每个项目独立版本号，各自演进**）→ `build --offline`
+   （产物是本项目一份 jar）→ 更新根 `README.md`（系列更新记录）与**本项目的** `README.md`
    （配置表 / 自检表）与开发日志 → 一个 commit；
-2. **提交信息**：`v1.x.y — 一句话主题`，正文列要点（新增/修复/配置项/自检结论；
-   若只改了某一个包，写明是哪个包）；
+   ⚠️ 若升的是 `more_mobs`，同步改 `more_mobs/mobkit/gradle.properties` 的 `mobs_version`；
+2. **提交信息**：`<项目> v1.x.y — 一句话主题`，正文列要点（新增/修复/配置项/自检结论）；
 3. **提交清单（自查）**：
-   - [ ] `compileJava --offline` 通过（改了 `mobs` 的话连 `:mobs:compileClientJava` 一起）；
+   - [ ] 改动项目的 `compileJava --offline` 通过（改了 `more_mobs` 的话连 `compileClientJava` 一起）；
    - [ ] runServer 自检全绿（或明确说明未跑的原因；画面类改动必须写明「需游戏内目视」）；
    - [ ] 各包 `run/config/yg-<包名>.json` 的 `selfTestRolls` 已改回 `0`；
    - [ ] 根 `README.md` 与改动包的 `README.md` 已同步；

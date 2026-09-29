@@ -16,12 +16,16 @@
 - 仓库（公开，直接 HTTPS 克隆）：https://github.com/Yunqingqingxi/random-drops.git
 - 主开发分支名是 26.2（跟随 MC 版本，不是 main）
 - 项目规范文件 AGENTS.md 在仓库根目录，开工前必须先读它，以它的约定为准
+- 仓库结构：五个**完全独立**的 gradle 项目（random_drops / more_enchants / world_events /
+  bingo / more_mobs），每个项目有自己的构建脚本、独立版本号；根目录不是 gradle 构建，
+  所有 gradle 命令都要先 cd 进对应项目目录。默认以 random_drops（随机掉落，核心包）为目标项目
 
 【硬性环境要求】
 - 我的系统是 Windows + Git Bash（命令按 bash 语法给）
 - 必须用 JDK 25（Fabric API 0.159.0+26.2 硬性要求 java >= 25，JDK 24 会在模组解析阶段被拒）。
   先检测我机器上有没有 JDK 25（常见位置 D:\Java\jdk-25），没有就提示我安装（Temurin Adoptium 25）
-- Minecraft 26.2 / Fabric Loader 0.19.5 / Fabric API 0.159.0+26.2（版本都写在 gradle.properties，不要改）
+- Minecraft 26.2 / Fabric Loader 0.19.5 / Fabric API 0.159.0+26.2（版本都写在各项目
+  gradle.properties，不要改）
 
 【步骤 1：克隆】
 git clone https://github.com/Yunqingqingxi/random-drops.git
@@ -32,6 +36,7 @@ git checkout 26.2
 
 【步骤 2：首次构建（重要：第一次不要加 --offline）】
 - 项目文档里的 --offline 是针对「gradle 依赖缓存已热」的老开发者；你在我这台新机器上必须联网拉依赖：
+  cd random_drops
   JAVA_HOME='<你的JDK25路径>' ./gradlew compileJava（不带 --offline）
 - 如果下载慢/卡死，给 gradle 配国内镜像：在 ~/.gradle/init.gradle 里把 mavenCentral 换成
   https://maven.aliyun.com/repository/public，Fabric maven 可用 https://maven.fabricmc.net 原地址
@@ -39,10 +44,10 @@ git checkout 26.2
 - 从第二次构建开始再改用 --offline（缓存已热，避免联网卡住）
 
 【步骤 3：跑一遍真服务器自检】
-- 按仓库 AGENTS.md 第 6 节的流程：
-  1. 把 run/config/random-drops.json 的 "selfTestRolls": 0 改成 200
+- 按仓库 AGENTS.md 第 6 节的流程（在项目目录里执行）：
+  1. 把 random_drops/run/config/yg-drops.json 的 "selfTestRolls": 0 改成 200
   2. JAVA_HOME='<你的JDK25路径>' ./gradlew runServer --offline > selftest-local.log 2>&1
-     （如果服务器起不来提示缺 eula，把 run/eula.txt 里改成 eula=true 再跑；
+     （如果服务器起不来提示缺 eula，把 random_drops/run/eula.txt 里改成 eula=true 再跑；
       如果 run/config 目录不存在就先跑一次让它自动生成）
   3. 等「===== 自检结束：N 项全部通过 =====」字样，逐项核对有没有 ❌
   4. 把 selfTestRolls 改回 0
@@ -50,14 +55,14 @@ git checkout 26.2
 - 常见坑：如果报 journal-1.lock / DirectoryLock 拒绝访问，就是有残留 java 进程，全杀掉重跑
 
 【步骤 4：打包】
-- JAVA_HOME='<你的JDK25路径>' ./gradlew build --offline
-- 产物在 build/libs/random-drops-<版本>.jar（-sources 是源码包，部署用不带 sources 的那个）
+- 在 random_drops/ 里：JAVA_HOME='<你的JDK25路径>' ./gradlew build --offline
+- 产物在 random_drops/build/libs/yg-drops-<版本>.jar（-sources 是源码包，部署用不带 sources 的那个）
 
 【完成标准（缺一不可）】
 1. git clone 成功且非浅克隆
-2. compileJava 通过
+2. random_drops 的 compileJava 通过
 3. 自检全部 ✅（项数以日志为准）
-4. build/libs 下有 jar
+4. random_drops/build/libs 下有 jar
 
 最后给我一份简报：每步的结果、遇到的问题与解决办法、jar 的完整路径。
 如果任何一步卡死，停下来把报错原文给我看，不要瞎猜乱改仓库文件。
@@ -98,6 +103,6 @@ git checkout 26.2
 
 ## 部署 jar 到服务器
 
-- 把 `build/libs/random-drops-<版本>.jar` 放进服务器的 `mods/` 目录，重启即可；
+- 把对应项目 `build/libs/yg-<包>-<版本>.jar` 放进服务器的 `mods/` 目录，重启即可；
 - 客户端不强制安装（模组纯服务端判定），装了只是能看附魔中文翻译；
 - 改完代码想分享成果：commit 后 `git push origin 26.2`（公开仓库，协作者用各自账号推送）。

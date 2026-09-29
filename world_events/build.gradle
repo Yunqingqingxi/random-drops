@@ -1,4 +1,4 @@
-// yg-bingo（bingo）—— 物品/击杀集卡玩法包，完全独立的 gradle 构建。
+// yg-events（world_events）—— 全局事件 / 猎杀悬赏玩法包，完全独立的 gradle 构建。
 //
 // 插件 id 必须是 `net.fabricmc.fabric-loom`（NoRemap 变体），不是 `fabric-loom`（完整版）。
 // 原因：26.2 是自定义 MC 版本，分发时已是「官方命名」形态，无 yarn/intermediary 映射。
@@ -11,12 +11,12 @@ group = 'com.yunxigames'
 version = project.mod_version
 
 base {
-	archivesName = "yg-bingo"
+	archivesName = "yg-events"
 }
 
 loom {
 	mods {
-		"yg_bingo" {
+		"yg_events" {
 			sourceSet sourceSets.main
 		}
 	}

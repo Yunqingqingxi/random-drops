@@ -1,13 +1,18 @@
 # yg-mobkit — 生物外观预览工具包
 
 > 开发期工具，**不随发行版发布**，不参与任何玩法包 jar。
+> 独立 gradle 构建（放在 more_mobs/ 里，但不是它的子项目）；
+> 靠 `../build/libs/yg-mobs-<mobs_version>.jar` 拿模型类，所以跑之前先在上层
+> `more_mobs/` 里 `./gradlew build --offline` 出一次 jar（more_mobs 升版本要同步
+> 改本目录 `gradle.properties` 的 `mobs_version`）。
 
 做新生物、或者改已有生物的外观时，不必启动客户端就能看到"它长什么样"：
 一条命令出多视图 PNG。
 
 ```bash
-JAVA_HOME='D:\Java\jdk-25' ./gradlew :mobkit:shot --offline
-# 产物：mobkit-out/yg-mobs-{front,side,top,back}.png
+cd more_mobs/mobkit
+JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
+# 产物：more_mobs/mobkit-out/yg-mobs-{front,side,top,back}.png
 ```
 
 ---
