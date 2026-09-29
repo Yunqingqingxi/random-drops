@@ -41,11 +41,15 @@ import java.util.UUID;
  *   <li><b>蓄力</b>（按住右键）：蓝银草每秒往上长「{@code poleVaultGrowPerSecond} + 每级加成」格，
  *       一路把挡路的方块顶碎（{@code poleVaultFragileSeconds} 起顶得动泥土木头这类易碎方块，
  *       {@code poleVaultStoneSeconds} 起连石头类也顶得动；基岩/黑曜石永远顶不动 → 杆停在它下面）。
- *       蓄力到 {@code poleVaultMaxChargeSeconds} 自动起跳。</li>
+ *       蓄力到 {@code poleVaultMaxChargeSeconds} 自动起跳。
+ *       <b>这段时间不画杆</b>：杆还只是手里那根蓝银草，人正好站在立杆点上，画一整根粒子柱
+ *       会看着像挂在人身上；反馈靠动作栏数字 + 方块被顶碎的原版演出。</li>
  *   <li><b>起跳</b>（松手）：一个冲量 + 之后纯原版抛物线。竖直初速由
  *       {@link PoleVaultPhysics#solveLaunch} 反解 MC 的积分器得到，峰值 = 杆顶留白后的高度
  *       + 助跑动能折算的高度 —— <b>杆有多长就能撑多高，没有人为上限</b>；
- *       水平速度照搬立杆那一刻的助跑动量。</li>
+ *       水平速度照搬立杆那一刻的助跑动量。
+ *       杆在这一刻「现形」：沿杆打一束粒子，之后它<b>钉在立杆点上</b>当「这是我的杆」的标记 ——
+ *       人飞出去，粒子留在原地，全程不跟人走。</li>
  *   <li><b>收场</b>：短杆整根倒伏（刚体，倒向与起跳方向相反 = 角动量守恒），长杆自顶向下散掉。</li>
  * </ol>
  *
@@ -349,7 +353,8 @@ public final class PoleVault {
 
 			growTo(charge.pole, charge.chargeTicks, charge.enchLevel, player, config);
 			announceTier(player, charge, config);
-			emitParticles(charge.pole, config, charge.pole.length);
+			// 蓄力期间**不画杆**：这时杆还只是手里那根蓝银草，人正好站在立杆点上，
+			// 画一整根粒子柱会看着像挂在人身上。起跳那一刻才打一束粒子让它「现形」（见 launch）
 
 			if (charge.chargeTicks % HINT_INTERVAL == 0 || full) {
 				hint(player, charge, config, full);
@@ -473,7 +478,7 @@ public final class PoleVault {
 			}
 
 			if (!pole.released) {
-				continue; // 还在蓄力：粒子和生长由 tickCharges 负责
+				continue; // 还在蓄力：不画杆（起跳那一刻才现形，见 tickCharges 的注释）
 			}
 
 			double[] next = PoleVaultPhysics.stepTopple(pole.tilt, pole.omega, pole.length, MAX_TILT);
@@ -661,6 +666,10 @@ public final class PoleVault {
 			release(pole, charge.dir.scale(-1.0D), config.poleVaultToppleNudge);
 		}
 
+		// 杆在这一刻「现形」：沿杆打一束粒子，之后它就钉在立杆点上当「这是我的杆」的标记
+		// （人飞出去了，粒子留在原地 —— 全程不跟人走）
+		emitBurst(pole, config);
+
 		player.getCooldowns().addCooldown(player.getMainHandItem(),
 				Math.max(1, config.poleVaultCooldownTicks));
 		if (config.poleVaultCushionedLanding) {
@@ -731,6 +740,26 @@ public final class PoleVault {
 		BlockPos pos = BlockPos.containing(tip.x, tip.y, tip.z);
 		BlockState state = pole.world.getBlockState(pos);
 		return !state.getCollisionShape(pole.world, pos).isEmpty();
+	}
+
+	/**
+	 * 起跳那一刻沿杆打一束粒子：杆「现形」，成为「这是我的撑杆棍」的标记。
+	 *
+	 * <p>这不跟随玩家：粒子全部按 {@link Pole#pointAt} 算，钉在立杆点上，
+	 * 人飞出去之后那根粒子杆还留在原地（短杆随后倒伏、长杆自顶向下散掉）。
+	 */
+	private static void emitBurst(Pole pole, EnchantsConfig config) {
+		if (!config.enablePoleVaultParticles || !(pole.length > 0.0D)) {
+			return;
+		}
+
+		ServerLevel world = pole.world;
+		int samples = Math.max(1, (int) Math.round(Math.min(pole.length * 3.0D, MAX_PARTICLES * 2.0D)));
+		for (int i = 0; i <= samples; i++) {
+			Vec3 p = pole.pointAt((double) i / samples);
+			world.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, p.x, p.y, p.z, 1, 0.03D, 0.03D, 0.03D, 0.0D);
+			world.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 1, 0.03D, 0.03D, 0.03D, 0.0D);
+		}
 	}
 
 	/** 沿杆撒「蓝银草」粒子：蓝（灵魂火）+ 银（末地烛），杆顶偶尔来一星电火花。 */

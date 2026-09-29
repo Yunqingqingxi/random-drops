@@ -298,7 +298,13 @@ public final class EnchantsConfig extends YgConfig {
 	 */
 	public double poleVaultToppleNudge = 0.003D;
 
-	/** 杆的粒子特效开关（默认 true）：关掉后只剩动作与音效，适合低配或嫌晃眼。 */
+	/**
+	 * 杆的粒子特效开关（默认 true）。
+	 *
+	 * <p>只影响<b>起跳之后</b>留在原地的那根粒子杆 —— 蓄力期间不画杆
+	 * （杆还只是手里那根蓝银草，人正好站在立杆点上，画柱子会像挂在人身上）。
+	 * 关掉后只剩动作、音效与动作栏数字。
+	 */
 	public boolean enablePoleVaultParticles = true;
 
 
