@@ -187,7 +187,7 @@ public final class EnchantsConfig extends YgConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-enchants.json");
 	private static volatile EnchantsConfig instance;
 
-	private EnchantsConfig() {
+	EnchantsConfig() {  // 包内可见：单元测试与 YgConfig 缺项补回需要 new 默认实例
 	}
 
 	/** 取当前配置；首次调用会从磁盘载入。 */
@@ -208,10 +208,13 @@ public final class EnchantsConfig extends YgConfig {
 	public static synchronized EnchantsConfig load() {
 		Path path = configPath(FILE_NAME);
 		EnchantsConfig loaded = null;
+		com.google.gson.JsonObject raw = null;
 
 		if (Files.isRegularFile(path)) {
 			try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-				loaded = GSON.fromJson(reader, EnchantsConfig.class);
+				// 先解析成 JsonObject 留底：merge 用它区分「json 里没写这一项」和「明确写了值」
+				raw = GSON.fromJson(reader, com.google.gson.JsonObject.class);
+				loaded = GSON.fromJson(raw, EnchantsConfig.class);
 			} catch (IOException | JsonParseException e) {
 				LOGGER.warn("[yg-enchants.json] 读取 {} 失败，改用默认配置：{}", path, e.toString());
 			}
@@ -219,6 +222,8 @@ public final class EnchantsConfig extends YgConfig {
 
 		if (loaded == null) {
 			loaded = new EnchantsConfig();
+		} else {
+			mergeMissingFields(loaded, raw, new EnchantsConfig());
 		}
 
 		loaded.validate();
@@ -241,7 +246,12 @@ public final class EnchantsConfig extends YgConfig {
 	}
 
 	/** 修正越界 / 缺失的值，并解析各个 id 列表。 */
-	private void validate() {
+	void validate() {
+		// min/max 钳制链对 NaN 会原样放行（Math.min/max 遇 NaN 返回 NaN），先回落默认值再钳
+		thunderRadius = orDefaultIfNaN(thunderRadius, 24.0D);
+		stinkyRadius = orDefaultIfNaN(stinkyRadius, 8.0D);
+		magnetRadius = orDefaultIfNaN(magnetRadius, 8.0D);
+
 		// ---- v1.12.0 附魔突破 ----
 		if (!(thunderIntervalTicks >= 1)) thunderIntervalTicks = 100;
 		thunderIntervalTicks = Math.min(20 * 600, thunderIntervalTicks);

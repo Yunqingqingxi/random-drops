@@ -27,6 +27,11 @@ loom {
 }
 
 repositories {
+	// 阿里云镜像（代理 mavenCentral，国内拉 JUnit 等测试依赖快）
+	maven {
+		name = 'Aliyun'
+		url = 'https://maven.aliyun.com/repository/public'
+	}
 	maven {
 		name = 'Fabric'
 		url = 'https://maven.fabricmc.net/'
@@ -58,4 +63,31 @@ dependencies {
 // 不会自动进 jar，需要显式打包
 jar {
 	from sourceSets.client.output
+}
+
+// ---- 测试（JUnit 5）----
+// ./gradlew test       全量：冒烟 + 单元 + 回归
+// ./gradlew smokeTest  只跑 @Tag("smoke")：验证「包立不立得起来」的最小事实
+dependencies {
+	testImplementation platform('org.junit:junit-bom:5.10.2')
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test).configureEach {
+	useJUnitPlatform()
+	testLogging {
+		events 'failed', 'skipped'
+		showStandardStreams = false
+	}
+}
+
+tasks.register('smokeTest', Test) {
+	group = 'verification'
+	description = '只跑冒烟测试（@Tag("smoke")）'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'smoke'
+	}
 }

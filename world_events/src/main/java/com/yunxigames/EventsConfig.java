@@ -162,7 +162,7 @@ public final class EventsConfig extends YgConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-events.json");
 	private static volatile EventsConfig instance;
 
-	private EventsConfig() {
+	EventsConfig() {  // 包内可见：单元测试与 YgConfig 缺项补回需要 new 默认实例
 	}
 
 	/** 取当前配置；首次调用会从磁盘载入。 */
@@ -183,10 +183,13 @@ public final class EventsConfig extends YgConfig {
 	public static synchronized EventsConfig load() {
 		Path path = configPath(FILE_NAME);
 		EventsConfig loaded = null;
+		com.google.gson.JsonObject raw = null;
 
 		if (Files.isRegularFile(path)) {
 			try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-				loaded = GSON.fromJson(reader, EventsConfig.class);
+				// 先解析成 JsonObject 留底：merge 用它区分「json 里没写这一项」和「明确写了值」
+				raw = GSON.fromJson(reader, com.google.gson.JsonObject.class);
+				loaded = GSON.fromJson(raw, EventsConfig.class);
 			} catch (IOException | JsonParseException e) {
 				LOGGER.warn("[yg-events.json] 读取 {} 失败，改用默认配置：{}", path, e.toString());
 			}
@@ -194,6 +197,8 @@ public final class EventsConfig extends YgConfig {
 
 		if (loaded == null) {
 			loaded = new EventsConfig();
+		} else {
+			mergeMissingFields(loaded, raw, new EventsConfig());
 		}
 
 		loaded.validate();
@@ -216,7 +221,12 @@ public final class EventsConfig extends YgConfig {
 	}
 
 	/** 修正越界 / 缺失的值，并解析各个 id 列表。 */
-	private void validate() {
+	void validate() {
+		// min/max 钳制链对 NaN 会原样放行（Math.min/max 遇 NaN 返回 NaN），先回落默认值再钳
+		frogRainRadius = orDefaultIfNaN(frogRainRadius, 8.0D);
+		meteorRadius = orDefaultIfNaN(meteorRadius, 8.0D);
+		meteorExplosionRadius = (float) orDefaultIfNaN(meteorExplosionRadius, 2.0D);
+
 		if (eventIntervalMinutes < 1) eventIntervalMinutes = 10;
 		if (!(eventChance >= 0.0D)) eventChance = 0.0D;
 		if (eventChance > 1.0D) eventChance = 1.0D;

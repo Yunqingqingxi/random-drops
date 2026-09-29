@@ -188,21 +188,31 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 
 ## 6. 测试节奏（团队既定，严格遵守）
 
-- **不写单元测试**。掉落/实体/爆炸/属性全要真服务器，mock 测不出「真的能用」；
-- **批量开发新功能时只跑 `compileJava --offline`**，攒一批做完后**统一跑一次 runServer 自检**；
-  单点 bug 修复可顺手跑一次自检确认；
-- **自检完整流程**（在**目标项目目录里**执行）：
+测试分两层，各项目**自带**（`src/test/java`，JUnit 5）：
+
+- **单元 / 回归测试**（`./gradlew test`，秒级）：
+  - `*UnitTest` —— `validate()` 钳制、黑名单过滤器等纯逻辑（不需要 Minecraft 运行时，
+    配置路径经 `YgConfig.configDirOverride` 注入临时目录，与生产共用同一条 load/save 代码）；
+  - `*RegressionTest` —— 钉死历史坑：Gson 缺项补回（缺项 boolean 读成 false、
+    数值读成 0 而非代码默认值）、**玩家明确写的 false 不可被偷改回 true**、NaN 穿透钳制链；
+- **冒烟测试**（`./gradlew smokeTest`，只跑 `@Tag("smoke")`）：
+  fabric.mod.json 合法、配置能从零生成写回、改动落盘可往返 ——「包立不立得起来」的最小事实；
+- **写新测试的规矩**：构造器与 `validate()` 保持包内可见（private 会挡住测试与缺项补回）；
+  回归测试必须先复现旧 bug 的失败路径再钉死正确行为；
+- **真服务器自检**（runServer + `selfTestRolls=200`）与上两层互补：
+  链路级验证（事件注册 / mixin / 注册表扫描），**新增玩法功能时仍必须加自检项**；
+  在**目标项目目录里**执行：
   1. 把本项目 `run/config/yg-<包名>.json` 里 `selfTestRolls` 改成 `200`；
   2. `JAVA_HOME='D:\Java\jdk-25' ./gradlew runServer --offline > selftest-<版本>.log 2>&1`；
   3. 等 `===== 自检结束：N 项全部通过 =====`，逐项核对；
   4. **把 `selfTestRolls` 改回 `0`**（别提交带 200 的配置）；
   5. 自检完 runServer 不会自己退出（空转 pausing），手动结束进程；
 - **每个包只跑自己的自检**：`SelfTest` 框架是「谁注册谁被跑」，只装一个包时就只跑那一个包的步骤；
-- **新增功能必须同步新增自检项**（**包内**编号递进），并更新**本包 `README.md`** 的自检表；
+- **新增功能必须同步新增自检项**（**包内**编号递进）与对应单元/回归测试，并更新**本包 `README.md`** 的自检表；
 - **自检编号是包内局部的、不全局唯一**：装了多个包时日志里会出现重复编号
   （drops 与 enchants 都有 ⑫），这是拆包后的既定事实，按步骤名读日志；
-- **画面类改动自检覆盖不到**：`mobs` 的外观（头身对位、缩放）只能进游戏目视确认，
-  自检只能查「贴图在不在 jar 里、有没有误覆盖原版资源、部件字段还在不在」；
+- **画面类改动自检与测试都覆盖不到**：`mobs` 的外观（头身对位、缩放）只能进游戏目视确认，
+  自动化只能查「贴图在不在 jar 里、有没有误覆盖原版资源、配置默认值是否精确」；
 - 自检期间 `SessionStats` 自动暂停，假掉落不会污染本局战绩——不用处理。
 
 ---
@@ -257,6 +267,7 @@ JAR=$(cygpath -w "C:\Users\Y1116\.gradle\caches\fabric-loom\minecraftMaven\net\m
 2. **提交信息**：`<项目> v1.x.y — 一句话主题`，正文列要点（新增/修复/配置项/自检结论）；
 3. **提交清单（自查）**：
    - [ ] 改动项目的 `compileJava --offline` 通过（改了 `more_mobs` 的话连 `compileClientJava` 一起）；
+   - [ ] 改动项目的 `./gradlew test` 全绿（新增功能同步新增单元/回归测试；冒烟覆盖 mod json 与配置往返）；
    - [ ] runServer 自检全绿（或明确说明未跑的原因；画面类改动必须写明「需游戏内目视」）；
    - [ ] 各包 `run/config/yg-<包名>.json` 的 `selfTestRolls` 已改回 `0`；
    - [ ] 根 `README.md` 与改动包的 `README.md` 已同步；

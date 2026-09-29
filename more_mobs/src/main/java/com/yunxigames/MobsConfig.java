@@ -99,7 +99,7 @@ public final class MobsConfig extends YgConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-mobs.json");
 	private static volatile MobsConfig instance;
 
-	private MobsConfig() {
+	MobsConfig() {  // 包内可见：单元测试与 YgConfig 缺项补回需要 new 默认实例
 	}
 
 	/** 取当前配置；首次调用会从磁盘载入。 */
@@ -120,10 +120,13 @@ public final class MobsConfig extends YgConfig {
 	public static synchronized MobsConfig load() {
 		Path path = configPath(FILE_NAME);
 		MobsConfig loaded = null;
+		com.google.gson.JsonObject raw = null;
 
 		if (Files.isRegularFile(path)) {
 			try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-				loaded = GSON.fromJson(reader, MobsConfig.class);
+				// 先解析成 JsonObject 留底：merge 用它区分「json 里没写这一项」和「明确写了值」
+				raw = GSON.fromJson(reader, com.google.gson.JsonObject.class);
+				loaded = GSON.fromJson(raw, MobsConfig.class);
 			} catch (IOException | JsonParseException e) {
 				LOGGER.warn("[yg-mobs.json] 读取 {} 失败，改用默认配置：{}", path, e.toString());
 			}
@@ -132,43 +135,13 @@ public final class MobsConfig extends YgConfig {
 		if (loaded == null) {
 			loaded = new MobsConfig();
 		} else {
-			mergeMissingTrueBooleans(loaded);
+			mergeMissingFields(loaded, raw, new MobsConfig());
 		}
 
 		loaded.validate();
 		instance = loaded;
 		loaded.save();
 		return loaded;
-	}
-
-	/**
-	 * 补齐旧配置文件里缺失的<b>默认值为 true</b> 的布尔字段。
-	 *
-	 * <p><b>为什么必须补</b>：Gson 反序列化<b>不会执行字段初始化器</b> —— 它走 Unsafe 直接建对象，
-	 * 所以 json 里没写的 {@code boolean} 会留在 JVM 默认值 {@code false}，而不是代码里写的 {@code true}。
-	 * 后果是：老配置文件（比如还没有 {@code phantomCreeperVisual} 这一项的那份）升级后，
-	 * 新外观会被<b>静默关掉</b>，玩家只会觉得「更新了怎么没变化」，日志里一个字都没有。
-	 *
-	 * <p>修法是拿一份全新默认实例逐字段对照：凡是「默认 true、而读进来的值是 false」的布尔字段，
-	 * 说明 json 里根本没写这一项（用户不可能手写成 false 又被我们当成没写），恢复成默认 true 并写回。
-	 * 新加「默认 true」的布尔开关时不必再单独处理，这个方法自动覆盖。
-	 */
-	private static void mergeMissingTrueBooleans(MobsConfig loaded) {
-		MobsConfig defaults = new MobsConfig();
-
-		for (java.lang.reflect.Field field : MobsConfig.class.getDeclaredFields()) {
-			if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.getType() != boolean.class) {
-				continue;
-			}
-
-			try {
-				if (field.getBoolean(defaults) && !field.getBoolean(loaded)) {
-					field.setBoolean(loaded, true);
-				}
-			} catch (ReflectiveOperationException e) {
-				LOGGER.warn("[yg-mobs.json] 补默认值时跳过字段 {}：{}", field.getName(), e.toString());
-			}
-		}
 	}
 
 	/** 把当前配置写回磁盘。 */
@@ -185,7 +158,7 @@ public final class MobsConfig extends YgConfig {
 	}
 
 	/** 修正越界 / 缺失的值，并解析各个 id 列表。 */
-	private void validate() {
+	void validate() {
 		// 爆炸威力用 !(x >= 0) 顺带挡掉 NaN；允许设为 0（等效关闭爆炸，只剩音效替换）。
 		if (!(phantomCreeperExplosionPower >= 0.0F)) phantomCreeperExplosionPower = 3.0F;
 		phantomCreeperExplosionPower = Math.min(16.0F, phantomCreeperExplosionPower);

@@ -67,7 +67,7 @@ public final class BingoConfig extends YgConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-bingo.json");
 	private static volatile BingoConfig instance;
 
-	private BingoConfig() {
+	BingoConfig() {  // 包内可见：单元测试与 YgConfig 缺项补回需要 new 默认实例
 	}
 
 	/** 取当前配置；首次调用会从磁盘载入。 */
@@ -88,10 +88,13 @@ public final class BingoConfig extends YgConfig {
 	public static synchronized BingoConfig load() {
 		Path path = configPath(FILE_NAME);
 		BingoConfig loaded = null;
+		com.google.gson.JsonObject raw = null;
 
 		if (Files.isRegularFile(path)) {
 			try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-				loaded = GSON.fromJson(reader, BingoConfig.class);
+				// 先解析成 JsonObject 留底：merge 用它区分「json 里没写这一项」和「明确写了值」
+				raw = GSON.fromJson(reader, com.google.gson.JsonObject.class);
+				loaded = GSON.fromJson(raw, BingoConfig.class);
 			} catch (IOException | JsonParseException e) {
 				LOGGER.warn("[yg-bingo.json] 读取 {} 失败，改用默认配置：{}", path, e.toString());
 			}
@@ -99,6 +102,8 @@ public final class BingoConfig extends YgConfig {
 
 		if (loaded == null) {
 			loaded = new BingoConfig();
+		} else {
+			mergeMissingFields(loaded, raw, new BingoConfig());
 		}
 
 		loaded.validate();
@@ -121,7 +126,7 @@ public final class BingoConfig extends YgConfig {
 	}
 
 	/** 修正越界 / 缺失的值，并解析各个 id 列表。 */
-	private void validate() {
+	void validate() {
 		if (entityBlacklist == null) entityBlacklist = new ArrayList<>();
 		entityBlacklistFilter = parseFilter(entityBlacklist, "entityBlacklist");
 

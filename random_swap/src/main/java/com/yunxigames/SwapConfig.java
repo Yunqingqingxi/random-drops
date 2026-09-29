@@ -65,7 +65,7 @@ public final class SwapConfig extends YgConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-swap.json");
 	private static volatile SwapConfig instance;
 
-	private SwapConfig() {
+	SwapConfig() {  // 包内可见：单元测试与 YgConfig 缺项补回需要 new 默认实例
 	}
 
 	/** 自检专用：造一份全新默认配置（绕开单例，不落盘、不影响运行中的 instance）。 */
@@ -106,7 +106,7 @@ public final class SwapConfig extends YgConfig {
 		if (loaded == null) {
 			loaded = new SwapConfig();
 		} else {
-			mergeMissingTrueBooleans(loaded, raw);
+			mergeMissingFields(loaded, raw, new SwapConfig());
 		}
 
 		loaded.validate();
@@ -128,41 +128,8 @@ public final class SwapConfig extends YgConfig {
 		}
 	}
 
-	/**
-	 * 补齐 json 里<b>确实缺失</b>的「默认值为 true」的布尔字段。
-	 *
-	 * <p><b>为什么必须补</b>：Gson 反序列化走 Unsafe 直接建对象、不执行字段初始化器 ——
-	 * json 里没写的 {@code boolean} 会留在 JVM 默认值 {@code false} 而不是代码默认 {@code true}，
-	 * 升级新增的开关在老配置上会静默关闭。
-	 *
-	 * <p><b>为什么先留底 {@link com.google.gson.JsonObject}</b>：只看反序列化结果无法区分
-	 * 「json 缺项」和「玩家明确写了 false」—— 两者读进来都是 false。照搬其它包「默认 true 却读到
-	 * false 就补回」的写法会把玩家明确关掉的开关又偷偷打开；这里用 {@code raw.has(字段名)}
-	 * 判存在性，只补 json 里真的没写的项。新加「默认 true」的布尔开关时自动覆盖，不必单独处理。
-	 */
-	private static void mergeMissingTrueBooleans(SwapConfig loaded, com.google.gson.JsonObject raw) {
-		if (raw == null) {
-			return; // 没有留底（损坏文件走默认实例），无从判断缺项，保持原样
-		}
-
-		SwapConfig defaults = new SwapConfig();
-		for (Field field : SwapConfig.class.getFields()) {
-			if (field.getType() != boolean.class || java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-				continue;
-			}
-			try {
-				if (field.getBoolean(defaults) && !field.getBoolean(loaded) && !raw.has(field.getName())) {
-					field.setBoolean(loaded, true);
-					LOGGER.info("[yg-swap.json] 老配置缺少新字段 {}，已补回默认值 true", field.getName());
-				}
-			} catch (ReflectiveOperationException e) {
-				LOGGER.warn("[yg-swap.json] 补默认值时跳过字段 {}：{}", field.getName(), e.toString());
-			}
-		}
-	}
-
 	/** 修正越界 / 缺失的值，并解析黑名单过滤器（NaN 一并治：!(x>=lo && x<=hi) 对 NaN 恒真）。 */
-	private void validate() {
+	void validate() {
 		if (entityBlacklist == null) entityBlacklist = new ArrayList<>();
 		entityBlacklistFilter = parseFilter(entityBlacklist, "entityBlacklist");
 
