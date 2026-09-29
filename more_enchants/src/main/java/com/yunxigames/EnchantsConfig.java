@@ -182,6 +182,68 @@ public final class EnchantsConfig extends YgConfig {
 	/** 图书管理员每笔交易的代价物品数量上限（默认 3）。 */
 	public int librarianMaxCost = 3;
 
+	// --------------------------------------------- 蓝银撑杆跳（v1.1.0）
+
+	/**
+	 * <b>蓝银撑杆跳</b>（v1.1.0 新附魔，<b>只能附在木棍上</b>）总开关。
+	 *
+	 * <p>手持带本附魔的木棍右键：杆立在地上、人撑起来向前飞出去。关掉后右键无响应，
+	 * 内存里的杆也会立刻清空（它们本来就只是粒子，不留世界状态）。
+	 */
+	public boolean enablePoleVault = true;
+
+	/** 立杆高度上限（格，默认 5）：也就是「杆立起来 5 格高」；头顶净空不足时按净空缩短。 */
+	public double poleVaultLength = 5.0D;
+
+	/**
+	 * 每级附魔额外提供的抬升高度（格/级，默认 1.5）。
+	 *
+	 * <p>蓝银草杆是一根弹簧：蓄能来自助跑，回弹时把多余的功还给撑杆人。等级越高蓄得越多，
+	 * 但再高也翻不过自己撑的那根杆（见 {@code poleVaultLength} 的硬上限）。
+	 */
+	public double poleVaultApexPerLevel = 1.5D;
+
+	/**
+	 * 助跑动能折算成高度的效率（默认 1.0 = 不设损耗）。
+	 *
+	 * <p>MC 里重力大、跑速低，助跑本身只能贡献不到半格（疾跑约 0.49 格），所以高度主要靠杆；
+	 * 助跑真正的意义在<b>水平动量</b>：跑多快就飞多远。
+	 */
+	public double poleVaultRunUpEfficiency = 1.0D;
+
+	/**
+	 * 起跳所需的最小水平速度（格/刻，默认 0.15）。
+	 *
+	 * <p>参考：走路约 0.216、疾跑约 0.28。低于这个值撑不起来 —— 站着不动没有动量，
+	 * 物理上也跳不了撑杆跳。
+	 */
+	public double poleVaultMinRunUp = 0.15D;
+
+	/** 起跳后保留的水平动量比例（默认 1.0 = 动量守恒）；调大像被杆甩出去，调小像原地拔高。 */
+	public double poleVaultForwardRetain = 1.0D;
+
+	/**
+	 * 撑杆跳自己的落地是否免摔落伤害（默认 true）。
+	 *
+	 * <p>拦的是「这一跳造成的下坠」：起跳后 {@code CUSHION_TICKS} 内、人在空中时把摔落距离按住
+	 * （fallDistance 是摔伤的唯一输入）。关掉就是硬核物理，从悬崖边撑出去自求多福。
+	 */
+	public boolean poleVaultCushionedLanding = true;
+
+	/** 撑杆跳冷却（游戏刻，默认 60 = 3 秒），走原版物品冷却 —— 零状态、客户端能看到冷却条。 */
+	public int poleVaultCooldownTicks = 60;
+
+	/**
+	 * 放手瞬间传给杆的反向角冲量（弧度/刻，默认 0.003）。
+	 *
+	 * <p>决定杆倒得多快：杆立在「不稳定平衡」上（α ∝ sinθ，θ≈0 时几乎不动），
+	 * 所以它天生先是纹丝不动、随后越倒越快。默认值下约 1.7 秒倒平，与人上升的时间尺度对得上。
+	 */
+	public double poleVaultToppleNudge = 0.003D;
+
+	/** 杆的粒子特效开关（默认 true）：关掉后只剩动作与音效，适合低配或嫌晃眼。 */
+	public boolean enablePoleVaultParticles = true;
+
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 	private static final Logger LOGGER = LoggerFactory.getLogger("yg-enchants.json");
@@ -295,5 +357,21 @@ public final class EnchantsConfig extends YgConfig {
 		// 图书管理员交易
 		if (librarianMaxCost < 1) librarianMaxCost = 3;
 		librarianMaxCost = Math.min(16, librarianMaxCost);
+
+		// ---- v1.1.0 蓝银撑杆跳 ----
+		// 杆长决定「杆多高」，也是起跳高度的硬上限，所以下界不能低于 2（否则立杆就没意义了）
+		poleVaultLength = orDefaultIfNaN(poleVaultLength, 5.0D);
+		poleVaultLength = Math.min(16.0D, Math.max(2.0D, poleVaultLength));
+		poleVaultApexPerLevel = orDefaultIfNaN(poleVaultApexPerLevel, 1.5D);
+		poleVaultApexPerLevel = Math.min(8.0D, Math.max(0.0D, poleVaultApexPerLevel));
+		poleVaultRunUpEfficiency = orDefaultIfNaN(poleVaultRunUpEfficiency, 1.0D);
+		poleVaultRunUpEfficiency = Math.min(3.0D, Math.max(0.0D, poleVaultRunUpEfficiency));
+		poleVaultMinRunUp = orDefaultIfNaN(poleVaultMinRunUp, 0.15D);
+		poleVaultMinRunUp = Math.min(1.0D, Math.max(0.0D, poleVaultMinRunUp));
+		poleVaultForwardRetain = orDefaultIfNaN(poleVaultForwardRetain, 1.0D);
+		poleVaultForwardRetain = Math.min(3.0D, Math.max(0.0D, poleVaultForwardRetain));
+		poleVaultCooldownTicks = Math.min(20 * 600, Math.max(0, poleVaultCooldownTicks));
+		poleVaultToppleNudge = orDefaultIfNaN(poleVaultToppleNudge, 0.003D);
+		poleVaultToppleNudge = Math.min(0.05D, Math.max(0.0D, poleVaultToppleNudge));
 	}
 }

@@ -8,7 +8,7 @@
 | 玩法包 | 项目目录 | jar / mod id | 文档 | 一句话 |
 | --- | --- | --- | --- | --- |
 | **随机掉落** | `random_drops/` | `yg-drops-<版本>.jar` / `yg_drops` | [random_drops/README.md](random_drops/README.md) | 每一次掉落都换成随机结果：物品 67% / 生物 8% / 空 25%，含暴击宝藏池、保底、精英怪、击杀赌注、地面规则、通关结算。**本系列的核心玩法** |
-| **更多附魔** | `more_enchants/` | `yg-enchants-<版本>.jar` / `yg_enchants` | [more_enchants/README.md](more_enchants/README.md) | 十个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 诅咒系 / 汲取 / 疾风 / 威压）+ 击杀升级 + 图书管理员重做 |
+| **更多附魔** | `more_enchants/` | `yg-enchants-<版本>.jar` / `yg_enchants` | [more_enchants/README.md](more_enchants/README.md) | 十一个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 诅咒系 / 汲取 / 疾风 / 威压 / 蓝银撑杆跳）+ 击杀升级 + 图书管理员重做 |
 | **事件 / 悬赏** | `world_events/` | `yg-events-<版本>.jar` / `yg_events` | [world_events/README.md](world_events/README.md) | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）+ 猎杀悬赏 + Boss 条 HUD |
 | **Bingo** | `bingo/` | `yg-bingo-<版本>.jar` / `yg_bingo` | [bingo/README.md](bingo/README.md) | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
 | **更多生物** | `more_mobs/` | `yg-mobs-<版本>.jar` / `yg_mobs` | [more_mobs/README.md](more_mobs/README.md) | 「苦力怕幻翼」—— 幻翼的翅膀 / 尾巴 / 飞行姿态全保留，头与躯干换成苦力怕，俯冲命中爆炸 + 自定义俯冲音效 |
@@ -128,6 +128,7 @@ cd mobkit
 
 | 版本 | 变化 |
 | --- | --- |
+| **yg-enchants 1.1.0** | **新附魔「蓝银撑杆跳」**（只能附在木棍上）：右键立起 5 格高的杆，人按物理弧线撑起来向前飞出，杆随后按刚体倒伏反向倒下（α = 3g/2L·sinθ，角动量守恒）；起跳高度由「杆的弹性能 + 助跑动能」预算二分反解 MC 的积分器得到，杆顶是硬上限，水平动量守恒 —— 跑多快飞多远，站着不动撑不起来。另补齐了全部 11 个自定义附魔的中文/英文语言文件（此前附魔名在游戏里显示为原始 key），并修掉自检 ⑲ 的亡灵生成判定 |
 | **结构重构（2026-09-29）** | **拆分为五个完全独立的 gradle 项目（非聚合）**：目录按玩法语义改名（`random_drops/` / `more_enchants/` / `world_events/` / `bingo/` / `more_mobs/`），每个项目有自己的构建脚本与**独立版本号**（mod id / jar 名 / 配置文件名不变，兼容已发布版本）；mobkit 外观预览工具与参考素材并入 `more_mobs/`；根目录不再是 gradle 构建；固化**第三方 mod 兼容设计约定**（注册表动态扫描、命名空间过滤、tag merge、不覆盖 `assets/minecraft`）。各项目版本号自此从 `1.0.0` 重新起版 |
 | **1.15.0** | **yunxigames 系列化**：项目整体改名 yunxigames，按玩法拆成五个**自包含**玩法包（`yg-drops` / `yg-enchants` / `yg-events` / `yg-bingo` / `yg-mobs`），各自一份 jar、一份 `config/yg-<包名>.json`、各带自己的自检步骤，**零跨包硬依赖**；命令统一为 `/yg`；新增**更多生物**包 —— 「苦力怕幻翼」（幻翼保留原生翅膀/尾巴/飞行姿态与眼睛层，头与躯干换成苦力怕；俯冲命中爆炸 + 俯冲开始播自定义音效） |
 | 1.14.1 | Bingo 地图修复；植被不掉落；击杀升级扩展到全部附魔（含原版）；幸运加成；图书管理员交易重做 |

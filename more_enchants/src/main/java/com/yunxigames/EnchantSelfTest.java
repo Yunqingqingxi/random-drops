@@ -93,15 +93,26 @@ static void checkStinkyFeet(MinecraftServer server, ServerLevel level, EnchantsC
 
 		int before;
 		int after;
+		int rawBefore;
+		int rawAfter;
+		Entity spawned;
+		boolean undeadTag;
 		try {
-			before = countUndead(level, base, config.stinkyRadius + 4.0D);
-			EnchantmentEffects.spawnUndeadNear(level, base);
-			after = countUndead(level, base, config.stinkyRadius + 4.0D);
+			double radius = config.stinkyRadius + 4.0D;
+			before = countUndead(level, base, radius);
+			rawBefore = countEntities(level, base, radius);
+			spawned = EnchantmentEffects.spawnUndeadNear(level, base);
+			after = countUndead(level, base, radius);
+			rawAfter = countEntities(level, base, radius);
+			undeadTag = spawned != null && EnchantmentEffects.isUndead(spawned, level);
 		} finally {
 			config.stinkyUndeadSpawnChance = savedChance;
 		}
 
-		boolean undeadSpawned = after > before;
+		// 断言「真的在世界里」：进世界成功 + 实体没被丢掉 + 它确实在亡灵标签里。
+		// 不拿 getEntities 的计数当判据 —— 无玩家的自检环境里，实体刚落地的同一刻
+		// 计数查询看不到它（区块没有 entity-ticking），那是测试环境的盲区，不是功能坏了。
+		boolean undeadSpawned = spawned != null && !spawned.isRemoved() && undeadTag;
 
 		// 清理
 		level.setBlock(base.above(), Blocks.AIR.defaultBlockState(), 2);
@@ -112,7 +123,16 @@ static void checkStinkyFeet(MinecraftServer server, ServerLevel level, EnchantsC
 		check("⑲ 臭脚·花草枯萎+亡灵生成",
 				flowerGone && grassGone && dirt && undeadSpawned,
 				"花消失=" + flowerGone + " 草消失=" + grassGone + " 草方块→泥土=" + dirt
-						+ "；亡灵生成 " + before + "→" + after);
+						+ "；入世界=" + (spawned != null) + " 未丢弃=" + (spawned != null && !spawned.isRemoved())
+						+ " 亡灵标签=" + undeadTag
+						+ "；亡灵计数 " + before + "→" + after + "（框内实体总数 " + rawBefore + "→" + rawAfter + "）");
+	}
+
+	/** 自检辅助：统计半径内的实体总数（不加过滤，用于区分「计数看不见」和「实体没生成」）。 */
+	private static int countEntities(ServerLevel level, BlockPos center, double r) {
+		AABB box = new AABB(center.getX() - r, center.getY() - r, center.getZ() - r,
+				center.getX() + r, center.getY() + r, center.getZ() + r);
+		return level.getEntities((Entity) null, box, e -> true).size();
 	}
 
 	
@@ -365,6 +385,94 @@ static void checkLibrarian(ServerLevel level, EnchantsConfig config) {
 		return level.getEntities((Entity) null, box,
 				e -> EnchantmentEffects.isUndead(e, level)).size();
 	}
+	// ------------------------------------------------------------ v1.1.0 蓝银撑杆跳
+
+	/**
+	 * ㊲：蓝银撑杆跳 —— 附魔只认木棍 + 起跳解算的物理不变量 + 倒杆的数值积分 + 真杆的生命周期。
+	 *
+	 * <p>刻意<b>不</b>构造假玩家：{@code ServerPlayer} 少了网络连接会在半路 NPE，
+	 * 而这一项真正要钉死的是「物理算得对不对」和「杆会不会自己消失」—— 两者都不需要玩家。
+	 * 起跳手感（抛物线顺不顺、粒子好不好看）只能进游戏目视，自检覆盖不到。
+	 */
+	static void checkPoleVault(ServerLevel level, EnchantsConfig config) {
+		Holder<Enchantment> holder = ModEnchantments.byName(level, ModEnchantments.POLE_VAULT);
+		boolean registered = holder != null;
+
+		// 「只能给木棍附魔」：靠附魔定义的 supported_items（#yg:pole_vault）落地，
+		// 所以直接问注册表里那条定义放行哪些物品 —— 数据包写错了这项就会红
+		boolean stickOnly = false;
+		if (registered) {
+			stickOnly = holder.value().canEnchant(new ItemStack(Items.STICK))
+					&& !holder.value().canEnchant(new ItemStack(Items.IRON_SWORD))
+					&& !holder.value().canEnchant(new ItemStack(Items.DIAMOND_HELMET))
+					&& !holder.value().canEnchant(new ItemStack(Items.BOW));
+		}
+
+		// 峰值反解：拿反解出来的初速再跑一遍积分器，必须正好落在预算高度上
+		double apexErr = Math.abs(PoleVaultPhysics.apexHeight(PoleVaultPhysics.vyForApex(3.0D)) - 3.0D);
+
+		double length = config.poleVaultLength;
+		PoleVaultPhysics.Launch sprint = PoleVaultPhysics.solveLaunch(0.28D, 3, length,
+				config.poleVaultApexPerLevel, config.poleVaultRunUpEfficiency,
+				config.poleVaultMinRunUp, config.poleVaultForwardRetain);
+		boolean capped = !sprint.refused()
+				&& sprint.apex() <= length - PoleVaultPhysics.HEADROOM + 1.0E-6D
+				&& PoleVaultPhysics.apexHeight(sprint.vy()) <= length - PoleVaultPhysics.HEADROOM + 1.0E-6D;
+		boolean momentum = !sprint.refused()
+				&& Math.abs(sprint.horizontalSpeed() - 0.28D * config.poleVaultForwardRetain) < 1.0E-9D;
+		boolean gated = PoleVaultPhysics.solveLaunch(0.0D, 3, length,
+				config.poleVaultApexPerLevel, config.poleVaultRunUpEfficiency,
+				config.poleVaultMinRunUp, config.poleVaultForwardRetain).refused();
+
+		// 倒杆：数值积分到倒平，末角速度要落在能量守恒解析解 √(3g/L) 附近
+		double tilt = 0.0D;
+		double omega = config.poleVaultToppleNudge;
+		int toppleTicks = 0;
+		while (tilt < Math.PI / 2.0D - 1.0E-9D && toppleTicks < 600) {
+			double[] next = PoleVaultPhysics.stepTopple(tilt, omega, length, Math.PI / 2.0D);
+			tilt = next[0];
+			omega = next[1];
+			toppleTicks++;
+		}
+		double analytic = PoleVaultPhysics.rodImpactOmega(length);
+		boolean toppled = tilt >= Math.PI / 2.0D - 1.0E-9D
+				&& Math.abs(omega - analytic) < analytic * 0.2D;
+
+		// 头顶净空：铺 3 格天花板，量出来必须正好是 3 格（杆穿不过石头）
+		BlockPos column = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(-8, 64, -8));
+		for (int i = 0; i < 3; i++) {
+			level.setBlock(column.above(3 + i), Blocks.STONE.defaultBlockState(), 2);
+		}
+		int clearance = PoleVault.measureClearance(level, column, 8);
+		for (int i = 0; i < 3; i++) {
+			level.setBlock(column.above(3 + i), Blocks.AIR.defaultBlockState(), 2);
+		}
+		boolean clearanceOk = clearance == 3;
+
+		// 真杆的生命周期：立一根 → 逐刻推进 → 必须自己倒平并消失（世界里不留任何东西）
+		int before = PoleVault.poleCount();
+		PoleVault.plant(level, new Vec3(column.getX() + 0.5D, column.getY(), column.getZ() + 0.5D),
+				length, new Vec3(0.0D, 0.0D, -1.0D), config.poleVaultToppleNudge);
+		int planted = PoleVault.poleCount();
+		int ticksRun = 0;
+		while (PoleVault.poleCount() > 0 && ticksRun < 600) {
+			PoleVault.tickPoles(config);
+			ticksRun++;
+		}
+		boolean lifeCycle = before == 0 && planted == 1 && PoleVault.poleCount() == 0;
+
+		check("㊲ 蓝银撑杆跳·只认木棍+物理弧线+倒杆",
+				registered && stickOnly && apexErr < 0.01D && capped && momentum && gated
+						&& toppled && clearanceOk && lifeCycle,
+				"注册=" + registered + " 只认木棍=" + stickOnly
+						+ "；峰值反解误差=" + SelfTest.trim(apexErr)
+						+ " 杆顶封顶=" + capped + " 动量守恒=" + momentum + " 助跑门槛=" + gated
+						+ "；倒平 " + toppleTicks + " 刻，末角速度 " + SelfTest.trim(omega)
+						+ "（解析 " + SelfTest.trim(analytic) + "）"
+						+ "；3 格天花板净空=" + clearance
+						+ "；杆生命周期 " + planted + "→" + PoleVault.poleCount() + "（" + ticksRun + " 刻）");
+	}
+
 	// ------------------------------------------------------------ v1.12.0 附魔突破 + 全局事件
 
 	/** ⑯：三个新附魔能从注册表解析出来，且 hasEnchantment / isWeaponOrTool 判断正确。 */

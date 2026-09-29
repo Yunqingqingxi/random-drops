@@ -16,8 +16,8 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import java.util.Set;
 
 /**
- * 解析三个本模组自定义附魔（雷霆万钧 / 臭脚 / 碎裂）的 {@link Holder<Enchantment>}，
- * 并提供若干判断工具。
+ * 解析本模组的全部自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重与易碎诅咒 /
+ * 汲取 / 疾风 / 威压 / 蓝银撑杆跳）的 {@link Holder<Enchantment>}，并提供若干判断工具。
  *
  * <p>26.2 里 {@code Enchantment} 是「数据包驱动」的注册表，没有
  * {@code BuiltInRegistries.ENCHANTMENT} 这种内建字段，所以自定义附魔走的是
@@ -38,6 +38,7 @@ public final class ModEnchantments {
 	public static final String LEECH = "leech";
 	public static final String SWIFT = "swift";
 	public static final String DREAD = "dread";
+	public static final String POLE_VAULT = "pole_vault";
 
 	/** 自定义附魔的统一等级上限（与 datapack json 的 max_level 保持一致）。 */
 	public static final int MAX_LEVEL = 3;
@@ -67,6 +68,7 @@ public final class ModEnchantments {
 	private static volatile Holder<Enchantment> leechHolder;
 	private static volatile Holder<Enchantment> swiftHolder;
 	private static volatile Holder<Enchantment> dreadHolder;
+	private static volatile Holder<Enchantment> poleVaultHolder;
 
 	/** 从注册表解析全部自定义附魔（幂等，带缓存）。 */
 	public static void resolve(ServerLevel level) {
@@ -77,7 +79,8 @@ public final class ModEnchantments {
 		if (thunderousHolder != null && stinkyHolder != null && shatterHolder != null
 				&& magnetHolder != null && greedHolder != null
 				&& burdenHolder != null && frailtyHolder != null
-				&& leechHolder != null && swiftHolder != null && dreadHolder != null) {
+				&& leechHolder != null && swiftHolder != null && dreadHolder != null
+				&& poleVaultHolder != null) {
 			return;
 		}
 
@@ -93,6 +96,7 @@ public final class ModEnchantments {
 		leechHolder = resolveOne(lookup, LEECH);
 		swiftHolder = resolveOne(lookup, SWIFT);
 		dreadHolder = resolveOne(lookup, DREAD);
+		poleVaultHolder = resolveOne(lookup, POLE_VAULT);
 	}
 
 	private static Holder<Enchantment> resolveOne(
@@ -151,6 +155,12 @@ public final class ModEnchantments {
 		return dreadHolder;
 	}
 
+	/** 蓝银撑杆跳（只能附在木棍上，见 {@code data/yg/enchantment/pole_vault.json}）。 */
+	public static Holder<Enchantment> poleVault(ServerLevel level) {
+		resolve(level);
+		return poleVaultHolder;
+	}
+
 	/** 自检用：按名字取附魔 Holder（不存在返回 null）。 */
 	public static Holder<Enchantment> byName(ServerLevel level, String name) {
 		resolve(level);
@@ -165,6 +175,7 @@ public final class ModEnchantments {
 			case LEECH -> leechHolder;
 			case SWIFT -> swiftHolder;
 			case DREAD -> dreadHolder;
+			case POLE_VAULT -> poleVaultHolder;
 			default -> null;
 		};
 	}

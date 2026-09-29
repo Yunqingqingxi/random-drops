@@ -300,7 +300,15 @@ public final class EnchantmentEffects {
 		return false;
 	}
 
-	public static void spawnUndeadNear(ServerLevel level, BlockPos pos) {
+	/**
+	 * 在 {@code pos} 附近「地表上方一格」生成一只随机亡灵，返回生成的实体（失败返回 null）。
+	 *
+	 * <p>骨架与 {@code EntityType#spawn} 一致（落位 → 随机朝向 → {@code finalizeSpawn}
+	 * 决定随机装备/属性 → 进世界），差别只在于<b>把「真的进了世界」的结果如实返回</b>：
+	 * 自检 ⑲ 在无玩家环境下没法用 {@code getEntities} 数出刚生成的实体
+	 * （区块不是 entity-ticking，同一刻的计数查询看不见它），只能直接断言实体本身。
+	 */
+	public static Entity spawnUndeadNear(ServerLevel level, BlockPos pos) {
 		String[] ids = {
 				"minecraft:zombie", "minecraft:skeleton", "minecraft:husk",
 				"minecraft:drowned", "minecraft:zombie_villager", "minecraft:zombie_piglin"
@@ -308,17 +316,28 @@ public final class EnchantmentEffects {
 		String id = ids[level.getRandom().nextInt(ids.length)];
 		EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id));
 		if (type == null) {
-			return;
+			return null;
 		}
 
-		// 在附近「地表上方一格」生成：直接写 y+2 会让实体悬空，
-		// 原版生成规则（EntityType#spawn）拒绝空中落地，等于这次效果白给。
+		// 在附近「地表上方一格」生成：直接写 y+2 会让实体悬空，原版生成规则拒绝空中落地，
+		// 等于这次效果白给。
 		int dx = (int) (level.getRandom().nextDouble() * 6.0D - 3.0D);
 		int dz = (int) (level.getRandom().nextDouble() * 6.0D - 3.0D);
 		BlockPos surface = level.getHeightmapPos(
 				net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,
 				pos.offset(dx, 0, dz));
-		type.spawn(level, surface, net.minecraft.world.entity.EntitySpawnReason.EVENT);
+
+		Entity spawned = type.create(level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
+		if (spawned == null) {
+			return null;
+		}
+		spawned.setPos(surface.getX() + 0.5D, surface.getY(), surface.getZ() + 0.5D);
+		spawned.setYRot(level.getRandom().nextFloat() * 360.0F);
+		if (spawned instanceof Mob mob) {
+			mob.finalizeSpawn(level, level.getCurrentDifficultyAt(spawned.blockPosition()),
+					net.minecraft.world.entity.EntitySpawnReason.EVENT, null);
+		}
+		return level.addFreshEntity(spawned) ? spawned : null;
 	}
 
 	// ------------------------------------------------------------ 磁石

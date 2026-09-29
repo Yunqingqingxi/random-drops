@@ -15,7 +15,7 @@
 | 玩法包 | 项目目录 | mod id | jar | 配置文件 | 内容 |
 | --- | --- | --- | --- | --- | --- |
 | 随机掉落 | `random_drops/` | `yg_drops` | `yg-drops` | `config/yg-drops.json` | 掉落随机化引擎（物品 67% / 生物 8% / 空 25%）、暴击宝藏池、保底、精英怪、击杀赌注、进度 / 维度 / 群系调概率、末影龙通关结算、五组地面规则、`/yg` 命令 |
-| 更多附魔 | `more_enchants/` | `yg_enchants` | `yg-enchants` | `config/yg-enchants.json` | 十个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重与易碎诅咒 / 汲取 / 疾风 / 威压）、击杀升级、图书管理员重做 |
+| 更多附魔 | `more_enchants/` | `yg_enchants` | `yg-enchants` | `config/yg-enchants.json` | 十一个自定义附魔（雷霆万钧 / 臭脚 / 碎裂 / 磁石 / 贪婪 / 负重与易碎诅咒 / 汲取 / 疾风 / 威压 / 蓝银撑杆跳）、击杀升级、图书管理员重做 |
 | 事件 / 悬赏 | `world_events/` | `yg_events` | `yg-events` | `config/yg-events.json` | 全局事件（青蛙雨 / 天降陨石 / 雷池 / 血月 / 福到）、猎杀悬赏、Boss 条 HUD |
 | Bingo | `bingo/` | `yg_bingo` | `yg-bingo` | `config/yg-bingo.json` | 物品 / 击杀双板集卡，5×5 板画在地图上，连线发奖 |
 | 更多生物 | `more_mobs/` | `yg_mobs` | `yg-mobs` | `config/yg-mobs.json` | 「苦力怕幻翼」：幻翼保留原生翅膀 / 尾巴 / 飞行姿态 / 眼睛层，头与躯干换成苦力怕；俯冲命中爆炸 + 俯冲开始播自定义音效 |
@@ -154,7 +154,8 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 
 | 类 | 所属 | 职责 |
 | --- | --- | --- |
-| `ModEnchantments` / `EnchantmentEffects` / `EnchantmentLevelUps` / `LibrarianTrades` | more_enchants | 自定义附魔解析 + 运行期效果（十个附魔）/ 击杀升级 / 图书管理员 |
+| `ModEnchantments` / `EnchantmentEffects` / `EnchantmentLevelUps` / `LibrarianTrades` | more_enchants | 自定义附魔解析 + 运行期效果（十一个附魔）/ 击杀升级 / 图书管理员 |
+| `PoleVault` / `PoleVaultPhysics` | more_enchants | 蓝银撑杆跳：右键立杆 + 起跳冲量 + 倒杆（纯数学校验层 `PoleVaultPhysics` 零 MC 依赖，可单测） |
 | `GlobalEvents` / `Bounties` | world_events | 全局事件调度（青蛙雨/陨石/雷池/血月/福到）+ Boss 条 HUD / 猎杀悬赏 |
 | `Bingos` | bingo | 双板集卡 + 地图绘制 + 连线判定 |
 | `mobs/PhantomSound` | more_mobs | 自定义音效的懒加载解析与播放（俯冲开始） |
@@ -231,6 +232,10 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 | 玩家破坏方块回调 | 直接当 ServerPlayer 用（参数是 `Player`） | `instanceof ServerPlayer sp` 过滤后再传 |
 | 实体标签存在性 | `EntityType` 静态常量（`LIGHTNING_BOLT` 等） | `BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse("minecraft:…"))` |
 | 掉落物生成 | 手动 `new ItemEntity` 后忘了延迟 | `setDefaultPickUpDelay()`；磁石类功能用 `hasPickUpDelay()` 豁免玩家丢弃 |
+| 给玩家一个速度冲量（撑杆跳 / 击退式位移） | 只 `setDeltaMovement(...)` 就指望客户端跟上 | 再置 `hurtMarked = true` —— 广播 `ClientboundSetEntityMotionPacket` 的是 `ServerEntity#sendChanges()`，**不在 `ServerPlayer`/`ServerGamePacketListenerImpl` 里**（在那儿搜不到不代表机制不存在） |
+| 读玩家这一 tick 的位移（助跑速度） | `player.getDeltaMovement()`（服务端手上这份基本是空的） | `ServerPlayer#getKnownMovement()`（客户端上报的位移） |
+| 让附魔/物品只认某一种物品 | 指望铁砧拦（原版铁砧对附魔书**不做**兼容性检查） | 附魔 JSON 的 `supported_items` 指向自定义 tag（`data/<ns>/tags/item/<name>.json`），运行期再判一次物品；自检用 `Enchantment#canEnchant(ItemStack)` 正面钉死 |
+| 自检里 `addFreshEntity` 之后立刻用 `getEntities` 数它 | 数不到（`SERVER_STARTED` 时区块还没有 entity-ticking，计数查询有盲区） | 断言实体本身（返回值 / `isRemoved()` / 标签命中），**别拿计数当判据** |
 
 ### 26.2 客户端渲染 / 音效（只有 `mobs` 包会碰）
 
@@ -241,6 +246,7 @@ cd mobkit && JAVA_HOME='D:\Java\jdk-25' ./gradlew shot --offline
 | 隐藏模型部件但保留子部件 | `visible = false`（**连子部件一起不渲染**） | `ModelPart.skipDraw = true`（只跳自身方块，子部件照常渲染） |
 | 自定义实体贴图 | 覆盖 `assets/minecraft/textures/...`（连原版资源一起改掉，曾把幻翼眼睛层抹成透明） | 放 `assets/<自己的 mod id>/textures/entity/...`，只有自己的渲染器引用它 |
 | 客户端源集的资源进 jar | 以为会随 main 一起打包 | `jar { from sourceSets.client.output }` 显式打包（loom `splitEnvironmentSourceSets()` 之后不会自动进） |
+| 用 Display 实体做自定义「实体杆 / 模型」 | `Display.BlockDisplay#setBlockState`、`Display#setTransformation`（26.2 **全是 private**，外部调不到） | 用粒子；真要实体就再加一个 `@Invoker` mixin —— 并记住**实体是进存档的**，服务端异常退出会在世界里留残骸 |
 | 内部类 Mixin | 直接引用包级私有的内部类 | `@Mixin(targets = "全限定$内部类名")`；取外部实例用 `@Shadow @Final` 字段（**可见性必须与目标一致**，包级私有就不加修饰符） |
 
 **查 API 的方法**（26.2 已去混淆，但包结构变动大，先查再写）：
