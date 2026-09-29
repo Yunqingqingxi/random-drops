@@ -40,6 +40,14 @@ public class YunxiGamesMobs implements ModInitializer {
 				ctx -> MobSelfTest.checkSoundRegistered(ctx.server, ctx.level, MobsConfig.get()));
 		SelfTest.registerStep("㊴ 俯冲音效·注入生效 + 音效可解析",
 				ctx -> MobSelfTest.checkSwoopSoundMixin(ctx.server, ctx.level, MobsConfig.get()));
+		SelfTest.registerStep("㊵ 生物改动·苦力怕外观契约",
+				ctx -> MobSelfTest.checkCreeperVisualContract(ctx.server, ctx.level, MobsConfig.get()));
+		SelfTest.registerStep("㊶ 旧配置升级·缺失的默认 true 开关被补回",
+				ctx -> MobSelfTest.checkConfigUpgrade(ctx.server, ctx.level, MobsConfig.get()));
+
+		// ㊶ 会临时覆写 yg-mobs.json，所以自检前后各挂一个钩子备份 / 还原，避免写坏用户配置
+		SelfTest.onBeforeRun(MobSelfTest::hookConfigBackup);
+		SelfTest.onAfterRun(MobSelfTest::hookConfigRestore);
 
 		LOGGER.info("[yg-mobs] 生物模块已加载（幻翼×苦力怕混合 + 自定义音效）");
 	}
