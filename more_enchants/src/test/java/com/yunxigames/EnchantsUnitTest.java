@@ -3,6 +3,7 @@ package com.yunxigames;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -67,6 +68,8 @@ class EnchantsUnitTest {
 		cfg.poleVaultRunUpEfficiency = 99.0D;
 		cfg.poleVaultMinRunUp = 5.0D;
 		cfg.poleVaultForwardRetain = -1.0D;
+		cfg.poleVaultHorizontalSpeed = Double.NaN;
+		cfg.poleVaultHorizontalChargeSeconds = -3.0D;
 		cfg.poleVaultCooldownTicks = -20;
 		cfg.poleVaultToppleNudge = Double.NaN;
 		cfg.validate();
@@ -84,6 +87,8 @@ class EnchantsUnitTest {
 		assertEquals(3.0D, cfg.poleVaultRunUpEfficiency, "效率上界 3");
 		assertEquals(1.0D, cfg.poleVaultMinRunUp, "门槛上界 1.0 格/刻");
 		assertEquals(0.0D, cfg.poleVaultForwardRetain, "负的动量保留钳到 0");
+		assertEquals(0.5D, cfg.poleVaultHorizontalSpeed, "NaN 水平速度上限回落默认 0.5");
+		assertEquals(0.0D, cfg.poleVaultHorizontalChargeSeconds, "负的蓄力窗口钳到 0（立刻蓄满）");
 		assertEquals(0, cfg.poleVaultCooldownTicks, "负冷却钳到 0");
 		assertEquals(0.003D, cfg.poleVaultToppleNudge, 1.0E-12D, "NaN 倒杆冲量回落默认");
 	}
@@ -93,7 +98,8 @@ class EnchantsUnitTest {
 		// 玩家速度理论上不会 NaN，但配置钳制链的历史坑就是「NaN 会穿透 min/max」，
 		// 这里把同一类防线钉在物理入口上：NaN 助跑速度既不能算出 NaN 高度，也不能放行
 		PoleVaultPhysics.Launch nan = PoleVaultPhysics.solveLaunch(
-				Double.NaN, 5.0D, 1.0D, 0.15D, 1.0D);
+				Double.NaN, 5.0D, Double.NaN, 1.0D, 0.15D);
 		assertTrue(nan.refused(), "NaN 速度必须判为「撑不起来」而不是放行");
+		assertFalse(Double.isNaN(nan.horizontalSpeed()), "水平速度也不能是 NaN");
 	}
 }

@@ -280,6 +280,17 @@ public final class EnchantsConfig extends YgConfig {
 	public double poleVaultForwardRetain = 1.0D;
 
 	/**
+	 * <b>蓄满水平动量后的水平速度</b>（格/刻，默认 0.5 ≈ 10 m/s）。
+	 *
+	 * <p>参考：疾跑约 0.28。立杆那一刻的助跑动量是下限，蓄力会把水平速度顶到这个上限 ——
+	 * 所以撑杆跳能真的「飞出去一段」，而不是原地弹高。
+	 */
+	public double poleVaultHorizontalSpeed = 0.5D;
+
+	/** 蓄满水平动量所需的蓄力（秒，默认 1.0）：蓄 1 秒就顶到 {@link #poleVaultHorizontalSpeed}。 */
+	public double poleVaultHorizontalChargeSeconds = 1.0D;
+
+	/**
 	 * 撑杆跳自己的落地是否免摔落伤害（默认 true）。
 	 *
 	 * <p>拦的是「这一跳造成的下坠」：起跳后一段时间内、人在空中时把摔落距离按住
@@ -452,6 +463,11 @@ public final class EnchantsConfig extends YgConfig {
 		poleVaultMinRunUp = Math.min(1.0D, Math.max(0.0D, poleVaultMinRunUp));
 		poleVaultForwardRetain = orDefaultIfNaN(poleVaultForwardRetain, 1.0D);
 		poleVaultForwardRetain = Math.min(3.0D, Math.max(0.0D, poleVaultForwardRetain));
+		poleVaultHorizontalSpeed = orDefaultIfNaN(poleVaultHorizontalSpeed, 0.5D);
+		poleVaultHorizontalSpeed = Math.min(8.0D, Math.max(0.0D, poleVaultHorizontalSpeed));
+		poleVaultHorizontalChargeSeconds = orDefaultIfNaN(poleVaultHorizontalChargeSeconds, 1.0D);
+		poleVaultHorizontalChargeSeconds = Math.min(600.0D,
+				Math.max(0.0D, poleVaultHorizontalChargeSeconds));
 		poleVaultCooldownTicks = Math.min(20 * 600, Math.max(0, poleVaultCooldownTicks));
 		poleVaultToppleNudge = orDefaultIfNaN(poleVaultToppleNudge, 0.003D);
 		poleVaultToppleNudge = Math.min(0.05D, Math.max(0.0D, poleVaultToppleNudge));

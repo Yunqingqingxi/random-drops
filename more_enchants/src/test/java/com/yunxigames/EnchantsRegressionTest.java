@@ -72,6 +72,8 @@ class EnchantsRegressionTest {
 		assertEquals(6.0D, cfg.poleVaultFragileSeconds, "缺项易碎档补回 6 秒");
 		assertEquals(30.0D, cfg.poleVaultStoneSeconds, "缺项石头档补回 30 秒");
 		assertEquals(300.0D, cfg.poleVaultMaxChargeSeconds, "缺项蓄力上限补回 5 分钟");
+		assertEquals(0.5D, cfg.poleVaultHorizontalSpeed, "缺项水平速度上限补回 0.5 格/刻");
+		assertEquals(1.0D, cfg.poleVaultHorizontalChargeSeconds, "缺项水平蓄力窗口补回 1 秒");
 		assertEquals(0.003D, cfg.poleVaultToppleNudge, 1.0E-12D, "缺项倒杆冲量补回代码默认");
 	}
 }

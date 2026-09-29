@@ -95,10 +95,29 @@ final class PoleVaultPhysics {
 	}
 
 	/**
+	 * 水平初速：立杆那一刻的助跑动量，随蓄力在 {@code horizontalChargeSeconds} 秒内涨到上限。
+	 *
+	 * <p>只增不减：蓄力是「把杆越蹬越有劲」，不会因为蓄得久而把助跑动量吃掉。
+	 * 上限由配置给（默认 0.5 格/刻 ≈ 10 m/s，比疾跑 0.28 快得多），
+	 * 所以哪怕只蓄 1 秒，飞出去的水平距离也明显拉长。
+	 */
+	static double horizontalSpeed(double runUpSpeed, double chargeSeconds,
+			double horizontalChargeSeconds, double maxHorizontalSpeed, double forwardRetain) {
+		double runUp = runUpSpeed > 0.0D ? runUpSpeed : 0.0D;
+		double charge = chargeSeconds > 0.0D ? chargeSeconds : 0.0D;
+		double window = horizontalChargeSeconds > 0.0D ? horizontalChargeSeconds : 0.0D;
+		double ratio = window <= 0.0D ? 1.0D : Math.min(1.0D, charge / window);
+		double max = maxHorizontalSpeed > 0.0D ? maxHorizontalSpeed : 0.0D;
+		double base = runUp + ratio * Math.max(0.0D, max - runUp);
+		double retain = forwardRetain > 0.0D ? forwardRetain : 0.0D;
+		return base * retain;
+	}
+
+	/**
 	 * 一次撑杆跳的起跳解算结果。
 	 *
 	 * @param vy              竖直初速（格/刻）
-	 * @param horizontalSpeed 水平初速（格/刻）
+	 * @param horizontalSpeed 水平初速（格/刻，由 {@link #horizontalSpeed} 单独算好传进来）
 	 * @param apex            预期峰值高度（格）
 	 * @param refused         助跑不足，这一跳不成立
 	 */
@@ -106,7 +125,7 @@ final class PoleVaultPhysics {
 	}
 
 	/**
-	 * 起跳解算：起跳高度 = <b>杆顶留白后的高度 + 助跑动能折算的高度</b>，水平动量照搬助跑。
+	 * 起跳解算：起跳高度 = <b>杆顶留白后的高度 + 助跑动能折算的高度</b>，水平速度由调用方算好传入。
 	 *
 	 * <p>v1.2.0 起这里<b>不再有高度上限</b>：杆能长多高，人就能被撑多高。
 	 * 唯一的边界是 {@link PoleVault} 用世界高度夹出来的杆长。
@@ -114,13 +133,12 @@ final class PoleVaultPhysics {
 	 * <p>注意「杆长」是<b>杆顶点离地的高度</b>：脚底最多到杆顶下方 {@link #HEADROOM} 格，
 	 * 所以 5 格杆只能把人送到 4 格。
 	 */
-	static Launch solveLaunch(double runUpSpeed, double poleLength, double runUpEfficiency,
-			double minRunUp, double forwardRetain) {
+	static Launch solveLaunch(double runUpSpeed, double poleLength, double horizontalSpeed,
+			double runUpEfficiency, double minRunUp) {
 		// NaN / 负速度一律当 0：配置钳制链的历史坑就是 NaN 会穿透 min/max，这里把同一道防线
 		// 钉在物理入口，绝不让 NaN 变成「一个很大的高度」
 		double speed = runUpSpeed > 0.0D ? runUpSpeed : 0.0D;
-		double retain = forwardRetain > 0.0D ? forwardRetain : 0.0D;
-		double horizontal = speed * retain;
+		double horizontal = horizontalSpeed > 0.0D ? horizontalSpeed : 0.0D;
 
 		// 站着不动是撑不起来杆的：没有水平动量，人只会原地蹬腿
 		if (!(speed >= minRunUp)) {

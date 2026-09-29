@@ -137,6 +137,14 @@ public final class PoleVault {
 		int dissolve;
 		/** 是否已经脱离蓄力（放手或中断）。 */
 		boolean released;
+		/**
+		 * 「穿过去了但当时还顶不碎」的方块（树叶、花草这类没有碰撞体积的）。
+		 *
+		 * <p>为什么必须记账：杆是往上长的，一旦长过某个方块就不会再看它一眼 ——
+		 * 如果蓄力到 6 秒时叶子早被绕过去了，那片叶子就永远是叶子（用户实测的 bug：
+		 * 「怎么连树叶都顶不破」）。所以每次穿过去都记一笔，蓄力跨过档位后回头补碎。
+		 */
+		final List<BlockPos> pendingBreaks = new ArrayList<>();
 
 		Pole(ServerLevel world, Vec3 base, double length) {
 			this.world = world;
@@ -352,6 +360,8 @@ public final class PoleVault {
 			}
 
 			growTo(charge.pole, charge.chargeTicks, charge.enchLevel, player, config);
+			// 之前「穿过去了但还顶不碎」的方块（树叶/花草），蓄力跨过档位后回头补碎
+			flushPendingBreaks(charge.pole, charge.chargeTicks, player, config);
 			announceTier(player, charge, config);
 			// 蓄力期间**不画杆**：这时杆还只是手里那根蓝银草，人正好站在立杆点上，
 			// 画一整根粒子柱会看着像挂在人身上。起跳那一刻才打一束粒子让它「现形」（见 launch）
@@ -599,7 +609,12 @@ public final class PoleVault {
 	}
 
 	/**
-	 * 第 {@code index} 格（相对杆底）能不能过：空气/花草直接穿，顶得碎就顶碎，顶不动就停住。
+	 * 第 {@code index} 格（相对杆底）能不能过：
+	 * <b>顶得碎就顶碎 → 顶不碎但没碰撞体积（树叶/花草/水）就穿过去并记账 → 顶不碎又有碰撞体积就停住</b>。
+	 *
+	 * <p>踩过的坑：早先的判定是「碰撞体积为空就直接放行」，而<b>树叶恰恰没有碰撞体积</b> ——
+	 * 于是判定压根没走到「能不能顶碎」，树叶永远顶不破。现在顺序反过来：
+	 * 先问能不能顶碎，顶不碎才谈「挡不挡路」。
 	 *
 	 * <p>石头类走 {@code #minecraft:mineable/pickaxe} tag、难易走硬度 —— 不硬编码方块 id，
 	 * 别人 mod 加的方块会自动落到正确档位。
@@ -610,9 +625,8 @@ public final class PoleVault {
 		BlockPos pos = BlockPos.containing(pole.base.x, pole.base.y + index, pole.base.z);
 		BlockState state = level.getBlockState(pos);
 
-		// 没有碰撞体积的东西（空气 / 花草 / 火把 / 水）直接穿过去，也不去破坏它们
-		if (state.getCollisionShape(level, pos).isEmpty()) {
-			return true;
+		if (state.isAir()) {
+			return true; // 空气：没什么可顶的
 		}
 
 		if (!PoleVaultPhysics.canBreakAt(
@@ -621,15 +635,54 @@ public final class PoleVault {
 				state.getDestroySpeed(level, pos),
 				config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
 				config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness)) {
+			// 还顶不碎：没有碰撞体积的东西（树叶 / 花草 / 火把 / 水）不挡路，先穿过去记账；
+			// 有碰撞体积的（石头 / 木头…）就顶在这儿，杆停在它下面
+			if (state.getCollisionShape(level, pos).isEmpty()) {
+				if (!pole.pendingBreaks.contains(pos)) {
+					pole.pendingBreaks.add(pos.immutable());
+				}
+				return true;
+			}
 			return false;
 		}
 
-		// 走原版破坏流程：掉落按原版来；2001 = 原版的「方块被破坏」粒子/音效事件
+		breakBlock(level, pos, state, breaker, config);
+		return true;
+	}
+
+	/** 蓄力补碎：把之前「穿过去但顶不碎」的方块按当前档位回头补上。 */
+	static void flushPendingBreaks(Pole pole, int chargeTicks, Entity breaker, EnchantsConfig config) {
+		if (pole.pendingBreaks.isEmpty()) {
+			return;
+		}
+
+		Iterator<BlockPos> it = pole.pendingBreaks.iterator();
+		while (it.hasNext()) {
+			BlockPos pos = it.next();
+			BlockState state = pole.world.getBlockState(pos);
+			if (state.isAir()) {
+				it.remove();
+				continue;
+			}
+			if (PoleVaultPhysics.canBreakAt(
+					chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND,
+					state.is(BlockTags.MINEABLE_WITH_PICKAXE, s -> true),
+					state.getDestroySpeed(pole.world, pos),
+					config.poleVaultFragileSeconds, config.poleVaultStoneSeconds,
+					config.poleVaultFragileMaxHardness, config.poleVaultStoneMaxHardness)) {
+				breakBlock(pole.world, pos, state, breaker, config);
+				it.remove();
+			}
+		}
+	}
+
+	/** 顶碎一格：走原版破坏流程（掉落按配置），2001 = 原版的「方块被破坏」粒子/音效事件。 */
+	private static void breakBlock(ServerLevel level, BlockPos pos, BlockState state,
+			Entity breaker, EnchantsConfig config) {
 		level.destroyBlock(pos, config.poleVaultBreakDrops, breaker, 512);
 		level.levelEvent(null, 2001, pos, Block.getId(state));
 		level.playSound(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
 				SoundEvents.BAMBOO_BREAK, SoundSource.PLAYERS, 0.7F, 1.3F);
-		return true;
 	}
 
 	/** 世界上方还剩多少格（杆再长也没意义，还会把人送出世界）。 */
@@ -641,9 +694,15 @@ public final class PoleVault {
 
 	private static void launch(ServerPlayer player, Charge charge, EnchantsConfig config) {
 		Pole pole = charge.pole;
+		double chargeSeconds = charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND;
+
+		// 水平：立杆时的助跑动量是下限，蓄力在 poleVaultHorizontalChargeSeconds 秒内把它顶到上限
+		double horizontal = PoleVaultPhysics.horizontalSpeed(charge.momentum, chargeSeconds,
+				config.poleVaultHorizontalChargeSeconds, config.poleVaultHorizontalSpeed,
+				config.poleVaultForwardRetain);
 		PoleVaultPhysics.Launch launch = PoleVaultPhysics.solveLaunch(
-				charge.momentum, pole.length, config.poleVaultRunUpEfficiency,
-				config.poleVaultMinRunUp, config.poleVaultForwardRetain);
+				charge.momentum, pole.length, horizontal,
+				config.poleVaultRunUpEfficiency, config.poleVaultMinRunUp);
 
 		player.stopUsingItem();
 
@@ -683,9 +742,10 @@ public final class PoleVault {
 				SoundEvents.TRIDENT_RIPTIDE_2, SoundSource.PLAYERS, 1.0F, 1.0F);
 
 		player.sendSystemMessage(Component.literal("§b[蓝银撑杆跳] §7蓄力 "
-				+ SelfTest.trim(charge.chargeTicks / PoleVaultPhysics.TICKS_PER_SECOND)
+				+ SelfTest.trim(chargeSeconds)
 				+ " s · 杆高 " + SelfTest.trim(pole.length)
-				+ " 格 · 腾空 " + SelfTest.trim(launch.apex()) + " 格！"), true);
+				+ " 格 · 腾空 " + SelfTest.trim(launch.apex())
+				+ " 格 · 水平 " + SelfTest.trim(launch.horizontalSpeed()) + " 格/刻"), true);
 	}
 
 	// ------------------------------------------------------------ 杆的工具
@@ -702,12 +762,14 @@ public final class PoleVault {
 		pole.released = true;
 		pole.fallDir = fallDir;
 		pole.omega = nudge;
+		pole.pendingBreaks.clear(); // 放手之后不再补碎（杆已经离开蓄力状态）
 	}
 
 	/** 让杆自顶向下散掉（长杆的收场、以及蓄力中断）。 */
 	static void dissolve(Pole pole) {
 		pole.released = true;
 		pole.dissolve = Math.max(pole.dissolve, DISSOLVE_TICKS);
+		pole.pendingBreaks.clear();
 	}
 
 	/** 当前立着的杆数量（自检用）。 */

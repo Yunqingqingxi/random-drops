@@ -23,9 +23,17 @@ class PoleVaultPhysicsTest {
 	private static final double STONE_SECONDS = 30.0D;
 	private static final double FRAGILE_MAX = 3.0D;
 	private static final double STONE_MAX = 5.0D;
+	private static final double HORIZONTAL_CHARGE_SECONDS = 1.0D;
+	private static final double MAX_HORIZONTAL = 0.5D;
+
+	/** 蓄满水的水平初速（蓄 60 秒肯定满了）。 */
+	private static double horizontal(double runUp) {
+		return PoleVaultPhysics.horizontalSpeed(runUp, 60.0D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D);
+	}
 
 	private static PoleVaultPhysics.Launch launch(double runUp, double poleLength) {
-		return PoleVaultPhysics.solveLaunch(runUp, poleLength, 1.0D, 0.15D, 1.0D);
+		return PoleVaultPhysics.solveLaunch(runUp, poleLength, horizontal(runUp), 1.0D, 0.15D);
 	}
 
 	private static double length(int chargeTicks, int level) {
@@ -70,21 +78,40 @@ class PoleVaultPhysicsTest {
 	}
 
 	@Test
-	void horizontalMomentumIsConserved() {
-		PoleVaultPhysics.Launch fast = launch(0.28D, 5.0D);
-		assertEquals(0.28D, fast.horizontalSpeed(), 1.0E-12D, "水平动量照搬助跑（保留系数 1.0）");
-		assertFalse(fast.refused());
-
-		// 保留系数是可调的平衡旋钮：调大就像被杆甩出去
-		PoleVaultPhysics.Launch thrown = PoleVaultPhysics.solveLaunch(0.28D, 5.0D, 1.0D, 0.15D, 1.5D);
-		assertEquals(0.42D, thrown.horizontalSpeed(), 1.0E-12D);
+	void horizontalSpeedRampsWithCharge() {
+		// 零蓄力：只有立杆那一刻的助跑动量（站着立杆的话连这个都没有）
+		assertEquals(0.28D, PoleVaultPhysics.horizontalSpeed(0.28D, 0.0D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		// 蓄到一半：线性爬升
+		assertEquals(0.39D, PoleVaultPhysics.horizontalSpeed(0.28D, 0.5D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		// 蓄满 1 秒就到上限，再蓄也不会更快
+		assertEquals(MAX_HORIZONTAL, PoleVaultPhysics.horizontalSpeed(0.28D, 1.0D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		assertEquals(MAX_HORIZONTAL, PoleVaultPhysics.horizontalSpeed(0.28D, 300.0D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		// 只增不减：助跑本来就比上限快时不会被蓄力拖慢
+		assertEquals(0.9D, PoleVaultPhysics.horizontalSpeed(0.9D, 0.2D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		// 保留系数仍是可调倍率
+		assertEquals(0.75D, PoleVaultPhysics.horizontalSpeed(0.28D, 60.0D,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.5D), 1.0E-12D);
+		// NaN 蓄力按「没蓄」处理，绝不能变成 NaN 速度
+		assertEquals(0.28D, PoleVaultPhysics.horizontalSpeed(0.28D, Double.NaN,
+				HORIZONTAL_CHARGE_SECONDS, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
+		// 蓄力窗口为 0 = 立刻蓄满
+		assertEquals(MAX_HORIZONTAL, PoleVaultPhysics.horizontalSpeed(0.1D, 0.0D,
+				0.0D, MAX_HORIZONTAL, 1.0D), 1.0E-12D);
 	}
 
 	@Test
 	void standingStillIsRefused() {
-		assertTrue(launch(0.0D, 300.0D).refused(), "站着不动撑不起来，杆再长也没用");
-		assertTrue(launch(0.14D, 5.0D).refused(), "差一点点也不够");
-		assertFalse(launch(0.15D, 5.0D).refused(), "刚好到门槛就该放行");
+		assertTrue(PoleVaultPhysics.solveLaunch(0.0D, 300.0D, 0.0D, 1.0D, 0.15D).refused(),
+				"站着不动撑不起来，杆再长也没用");
+		assertTrue(PoleVaultPhysics.solveLaunch(0.14D, 5.0D, horizontal(0.14D), 1.0D, 0.15D).refused(),
+				"差一点点也不够");
+		assertFalse(PoleVaultPhysics.solveLaunch(0.15D, 5.0D, horizontal(0.15D), 1.0D, 0.15D).refused(),
+				"刚好到门槛就该放行");
 	}
 
 	@Test
